@@ -667,6 +667,270 @@ Future improvements may include:
 - load balancing
 
 These improvements should not require changes to business logic.
+---
+
+# 12. Performance Strategy
+
+Performance is considered a design requirement.
+
+The system must remain responsive while managing large documentary collections.
+
+## Performance Principles
+
+- Optimize database queries.
+- Avoid unnecessary data loading.
+- Use pagination for large datasets.
+- Use asynchronous operations whenever appropriate.
+- Minimize network requests.
+- Cache data only when justified.
+- Index frequently queried database columns.
+
+The objective is predictable performance rather than premature optimization.
+
+---
+
+# 13. Coding Standards
+
+All source code must follow the project coding standards.
+
+General principles:
+
+- Clean Architecture.
+- SOLID principles.
+- DRY (Don't Repeat Yourself).
+- KISS (Keep It Simple).
+- YAGNI (You Aren't Gonna Need It).
+
+Business rules must never be duplicated.
+
+Every public class, API endpoint and service should have a single responsibility.
+
+---
+
+# 14. Documentation Strategy
+
+Documentation evolves together with the software.
+
+Documentation is version-controlled inside the repository.
+
+Every architectural decision must be documented before implementation.
+
+The documentation hierarchy is:
+
+Foundation
+
+↓
+
+Blueprint
+
+↓
+
+Business
+
+↓
+
+Architecture
+
+↓
+
+Database
+
+↓
+
+Backend
+
+↓
+
+Frontend
+
+↓
+
+Deployment
+
+If documentation and implementation differ, documentation must be reviewed immediately.
+
+---
+
+# 15. Testing Strategy
+
+Testing is implemented progressively.
+
+Testing levels:
+
+## Unit Tests
+
+Validate business rules.
+
+---
+
+## Integration Tests
+
+Validate interaction between modules.
+
+---
+
+## API Tests
+
+Validate REST endpoints.
+
+---
+
+## End-to-End Tests
+
+Validate complete business processes.
+
+---
+
+Business-critical modules should always receive priority.
+
+Testing focuses on reliability rather than test quantity.
+
+---
+
+# 16. Deployment Strategy
+
+The application is deployed using Docker.
+
+Initial deployment consists of:
+
+- Frontend
+- Backend
+- PostgreSQL
+- MinIO
+
+Future environments:
+
+- Development
+- Testing
+- Production
+
+Deployment must remain reproducible.
+
+Configuration is environment-based.
+
+---
+
+# 17. Roadmap
+
+The ERP will be developed incrementally.
+
+Phase 1
+
+Business Analysis
+
+---
+
+Phase 2
+
+Software Architecture
+
+---
+
+Phase 3
+
+Database Design
+
+---
+
+Phase 4
+
+Backend Development
+
+---
+
+Phase 5
+
+Frontend Development
+
+---
+
+Phase 6
+
+Testing
+
+---
+
+Phase 7
+
+Deployment
+
+---
+
+Phase 8
+
+Maintenance
+
+Each phase produces documented deliverables before implementation continues.
+
+---
+
+# 18. Quality Attributes
+
+The architecture prioritizes the following quality attributes.
+
+- Maintainability
+- Reliability
+- Security
+- Scalability
+- Traceability
+- Performance
+- Availability
+- Modularity
+- Testability
+- Usability
+
+Architectural decisions should improve these attributes whenever possible.
+
+---
+
+# 19. Risks
+
+Known architectural risks include:
+
+- Requirement changes.
+- Regulatory updates.
+- Business growth.
+- Large document volumes.
+- External integrations.
+- Single developer dependency.
+
+The architecture should minimize the impact of these risks.
+
+---
+
+# 20. Architecture Decision Records
+
+Significant architectural decisions will be documented as ADRs.
+
+Initial ADR list:
+
+ADR-001 Modular Monolith
+
+ADR-002 Modular Business Domains
+
+Future ADRs include:
+
+- Authentication Strategy
+- Database Strategy
+- File Storage Strategy
+- API Versioning
+- Logging Strategy
+- Error Handling Strategy
+- Backup Strategy
+
+Every major architectural change requires a new ADR.
+
+---
+
+# Conclusion
+
+This Master Blueprint establishes the architectural foundation of the DMS ERP project.
+
+All future design and implementation decisions must remain consistent with the principles defined in this document.
+
+The blueprint is a living document and may evolve through controlled revisions as the project matures.
+
+---
 
 # Version History
 
@@ -675,3 +939,4 @@ These improvements should not require changes to business logic.
 | 0.1.0 | 2026-07-11 | Initial structure and architectural principles. |
 | 0.2.0 | 2026-07-11 | Defined architecture, layers and business domains. |
 | 0.3.0 | 2026-07-11 | Defined modules, technology stack, security and scalability strategy. |
+| 1.0.0 | 2026-07-11 | Completed the Master Blueprint. |
