@@ -125,8 +125,236 @@ Short-term shortcuts that generate technical debt are avoided whenever possible.
 
 ---
 
+# 5. System Architecture
+
+The DMS ERP is designed as a **Modular Monolith**.
+
+The system is deployed as a single application while keeping clear boundaries between business modules.
+
+Each module owns its business logic and communicates through well-defined interfaces.
+
+This architecture provides:
+
+- Simpler deployment.
+- Lower operational complexity.
+- Better maintainability.
+- Easier debugging.
+- Future migration to microservices if business growth requires it.
+
+The architecture favors modularity over distribution.
+
+---
+
+# 6. Architectural Layers
+
+The system follows a layered architecture.
+
+Presentation Layer
+
+Responsible for user interaction.
+
+Technology:
+
+- React
+- TypeScript
+- Tailwind CSS
+
+Responsibilities:
+
+- User interface
+- Forms
+- Validation
+- Navigation
+
+---
+
+Application Layer
+
+Coordinates business use cases.
+
+Responsibilities:
+
+- Execute business workflows
+- Validation orchestration
+- Transactions
+- Authorization
+
+---
+
+Domain Layer
+
+Contains the business rules.
+
+Responsibilities:
+
+- Entities
+- Value Objects
+- Business Rules
+- Domain Services
+
+This layer must not depend on infrastructure.
+
+---
+
+Infrastructure Layer
+
+Provides technical services.
+
+Responsibilities:
+
+- Database
+- File Storage
+- Authentication
+- Logging
+- Email
+- External integrations
+
+Infrastructure depends on the Domain, never the opposite.
+
+---
+
+Persistence Layer
+
+Responsible for data storage.
+
+Technology:
+
+- PostgreSQL
+- Entity Framework Core
+
+Responsibilities:
+
+- Repositories
+- Migrations
+- Queries
+- Transactions
+
+---
+
+# 7. Domain Strategy
+
+The ERP is organized around business domains rather than technical components.
+
+Each domain represents a business capability.
+
+The initial domains are:
+
+## Customer Management
+
+Administration of contracting companies.
+
+---
+
+## Contract Management
+
+Management of contracts, services, validity periods and capacities.
+
+---
+
+## Warehouse Management
+
+Administration of warehouses, aisles, shelves, cabinets and physical locations.
+
+---
+
+## Documentary Management
+
+Management of documentary hierarchy according to AGN.
+
+Series
+
+↓
+
+Subseries
+
+↓
+
+Expedients
+
+↓
+
+Folders
+
+↓
+
+Documents
+
+↓
+
+Folios
+
+---
+
+## Barcode Management
+
+Generation and validation of unique identifiers.
+
+Tracking of physical assets.
+
+---
+
+## Documentary Loans
+
+Control of physical and digital loans.
+
+Authorization.
+
+Return.
+
+History.
+
+Traceability.
+
+---
+
+## Digitization
+
+Management of digitization requests.
+
+Control of generated digital files.
+
+Association with physical records.
+
+---
+
+## Billing
+
+Support for monthly billing.
+
+Calculation by:
+
+- Folder
+- Meter
+- Hours
+- Digitization
+- Other contractual concepts
+
+Accounting remains managed in SIIGO.
+
+---
+
+## User Management
+
+Authentication.
+
+Authorization.
+
+Roles.
+
+Permissions.
+
+---
+
+## Audit
+
+Registration of every relevant business event.
+
+No critical operation should occur without leaving an audit trail.
+
+
 # Version History
 
 | Version | Date | Description |
 |----------|------|-------------|
 | 0.1.0 | 2026-07-11 | Initial structure and architectural principles. |
+| 0.2.0 | 2026-07-11 | Defined architecture, layers and business domains. |
