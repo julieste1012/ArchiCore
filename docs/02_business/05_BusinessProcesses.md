@@ -126,8 +126,8 @@ The following processes are initially defined.
 
 | ID | Process | Status |
 |----|----------|--------|
-| BP-001 | Documentary Reception | Pending |
-| BP-002 | Documentary Counting | Pending |
+| BP-001 | Documentary Reception | Completed |
+| BP-002 | Documentary Counting | Completed |
 | BP-003 | Documentary Verification | Pending |
 | BP-004 | Documentary Classification | Pending |
 | BP-005 | Folder Labeling | Pending |
@@ -345,7 +345,204 @@ Generate audit records for:
 - Contract
 - Reception record
 
+---
 
+# BP-002 Documentary Counting
+
+## Identification
+
+| Field | Value |
+|--------|-------|
+| Process ID | BP-002 |
+| Name | Documentary Counting |
+| Business Area | Documentary Management |
+| Related Service | Documentary Management |
+
+---
+
+## Objective
+
+Verify that the quantity of documentary material physically received matches the documentation delivered by the customer before detailed documentary verification begins.
+
+---
+
+## Actors
+
+Primary Actor
+
+- Project Coordinator
+
+Supporting Actors
+
+- Archive Assistants
+
+---
+
+## Trigger
+
+Documentary reception has been completed successfully.
+
+---
+
+## Preconditions
+
+- Reception has been completed.
+- Documentary material remains under temporary custody.
+- Delivery documentation is available.
+
+---
+
+## Business Operation
+
+The Project Coordinator, accompanied by one or more Archive Assistants, performs the physical counting of all documentary units received.
+
+The counting includes:
+
+- Boxes
+- Folders
+- Special documentary units (if applicable)
+
+The quantities are compared with the delivery inventory provided by the customer.
+
+---
+
+## Main Flow
+
+### Step 1
+
+Retrieve the delivery inventory.
+
+---
+
+### Step 2
+
+Count every received box.
+
+---
+
+### Step 3
+
+Open each box when required.
+
+---
+
+### Step 4
+
+Count the folders contained in every box.
+
+---
+
+### Step 5
+
+Compare physical quantities against the delivery inventory.
+
+---
+
+### Step 6
+
+Register any discrepancies.
+
+Examples:
+
+- Missing folders
+- Additional folders
+- Incorrect numbering
+- Damaged folders
+
+---
+
+### Step 7
+
+Approve the counting process.
+
+The documentation is transferred to BP-003 Documentary Verification.
+
+---
+
+## Alternative Flows
+
+### AF-01
+
+Minor quantity differences are detected.
+
+The differences are documented and the process continues.
+
+---
+
+### AF-02
+
+Additional documentary units are delivered.
+
+These units are recorded separately and included in the reception.
+
+---
+
+## Exception Flows
+
+### EX-01
+
+The quantity difference prevents acceptance.
+
+Result:
+
+Reception is suspended until the customer resolves the discrepancy.
+
+---
+
+### EX-02
+
+Boxes contain documentary material belonging to another contract.
+
+Result:
+
+The incident is registered and the material is isolated.
+
+---
+
+## Postconditions
+
+- Documentary quantities are confirmed.
+- Counting discrepancies have been documented.
+- Material is approved for documentary verification.
+
+---
+
+## Data Generated
+
+- Counting record
+- Box count
+- Folder count
+- Discrepancy report
+- Counting date
+- Responsible personnel
+
+---
+
+## Audit Events
+
+Generate audit records for:
+
+- Counting started
+- Counting completed
+- Counting discrepancies
+- Reception suspended
+
+---
+
+## Related Modules
+
+- Documentary Management
+- Contracts
+- Warehouses
+- Audit
+
+---
+
+## Related Documents
+
+- Delivery inventory
+- Counting report
+- Reception record
 
 # Version History
 
@@ -353,3 +550,4 @@ Generate audit records for:
 |----------|------|-------------|
 | 0.1.0 | 2026-07-11 | Initial structure for business process documentation. |
 | 0.2.0 | 2026-07-11 | Added BP-001 Documentary Reception. |
+| 0.3.0 | 2026-07-11 | Added BP-002 Documentary Counting. |
