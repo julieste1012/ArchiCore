@@ -345,6 +345,16 @@ Generate audit records for:
 - Contract
 - Reception record
 
+## State Transition
+
+Pending Reception
+
+↓
+
+Received
+
+
+
 ---
 
 # BP-002 Documentary Counting
@@ -543,6 +553,16 @@ Generate audit records for:
 - Delivery inventory
 - Counting report
 - Reception record
+
+## State Transition
+
+Received
+
+↓
+
+Counted
+
+
 
 # Version History
 
