@@ -1,2 +1,9 @@
 <Solution>
+  <Folder Name="/Backend/">
+    <Project Path="Backend/ArchiCore.API/ArchiCore.API.csproj" />
+    <Project Path="Backend/ArchiCore.Application/ArchiCore.Application.csproj" />
+    <Project Path="Backend/ArchiCore.Domain/ArchiCore.Domain.csproj" />
+    <Project Path="Backend/ArchiCore.Infrastructure/ArchiCore.Infrastructure.csproj" />
+    <Project Path="Backend/ArchiCore.Shared/ArchiCore.Shared.csproj" />
+  </Folder>
 </Solution>
