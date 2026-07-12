@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArchiCore.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bbedd760db535e988c4d2512842f6b4866de9e38")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+80c8eb2e5192e2d6051b792d6fa18e5da6d6fa9e")]
 [assembly: System.Reflection.AssemblyProductAttribute("ArchiCore.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArchiCore.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
