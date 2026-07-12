@@ -6,19 +6,14 @@ namespace ArchiCore.Domain.ValueObjects;
 /// Value Object que representa un código de barras utilizado para identificar
 /// elementos físicos dentro del sistema.
 /// </summary>
-public sealed class Barcode : ValueObject
+public sealed class Barcode : CodeValueObject
 {
     private const int MinLength = 1;
     private const int MaxLength = 100;
 
-    /// <summary>
-    /// Valor del código de barras.
-    /// </summary>
-    public string Value { get; }
-
     private Barcode(string value)
+        : base(value)
     {
-        Value = value;
     }
 
     /// <summary>
@@ -59,13 +54,4 @@ public sealed class Barcode : ValueObject
 
         return Result.Success(new Barcode(trimmedValue));
     }
-
-    /// <inheritdoc />
-    protected override IEnumerable<object?> GetEqualityComponents()
-    {
-        yield return Value;
-    }
-
-    /// <inheritdoc />
-    public override string ToString() => Value;
 }
