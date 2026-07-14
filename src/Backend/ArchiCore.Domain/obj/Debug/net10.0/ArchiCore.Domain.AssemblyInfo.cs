@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArchiCore.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4b69d8c5ffc4da214cb21d6d35eacbf5fa9fca68")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e0bebbda76676f3d44ca04c2e5cab50128406599")]
 [assembly: System.Reflection.AssemblyProductAttribute("ArchiCore.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArchiCore.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
