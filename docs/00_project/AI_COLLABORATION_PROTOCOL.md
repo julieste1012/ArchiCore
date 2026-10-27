@@ -3,7 +3,7 @@
 | Campo | Valor |
 |--------|-------|
 | Documento | AI Collaboration Protocol |
-| Versión | 1.0.0 |
+| Versión | 1.0.1 |
 | Estado | Approved |
 | Proyecto | ArchiCore ERP |
 
@@ -19,9 +19,9 @@ Its objective is to ensure consistency, maintainability and architectural integr
 
 # Roles
 
-## GPT-5
+## ChatGPT (Architecture Lead)
 
-Primary Architect.
+Primary Architect and architectural authority.
 
 Responsibilities:
 
@@ -141,3 +141,4 @@ Generated code must satisfy:
 | Version | Date | Description |
 |----------|------|-------------|
 |1.0.0|2026-07-11|Initial protocol.|
+|1.0.1|2026-10-26|Use tool-agnostic ChatGPT role instead of a model-specific label.|

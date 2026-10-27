@@ -59,7 +59,7 @@ Do not create persistence mappings or additional aggregate classes based on cont
 6. **Customer profile.** Current `Customer` stores NIT and status only. `CustomerSpecification.md` explicitly leaves name/business identity/contact fields open; do not invent required fields silently.
 7. **Incomplete status/event transitions.** Box has status values whose transitions are not reachable through current public methods; Warehouse maintenance/archive transitions do not all emit catalogued events.
 8. **Business-process coverage.** `05_BusinessProcesses.md` marks BP-001 and BP-002 completed in documentation, but no application/use-case/API implementation was found for these workflows. BP-003 to BP-014 are still pending in the process index.
-9. **Technology documentation.** The Master Blueprint describes ASP.NET Core 9, while the solution is `net10.0`. Reconcile the authoritative blueprint with the selected runtime before release.
+9. **Technology documentation.** Resolved by ADR-003: the solution targets .NET 10 LTS (`net10.0`), and the Master Blueprint now reflects ASP.NET Core 10. Keep patch-level dependencies aligned with the .NET 10 release train.
 
 The project AI Collaboration Protocol prohibits inventing business rules. Record decisions in the documentation first, then implement them.
 
