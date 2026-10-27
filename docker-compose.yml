@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: archicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: archicore
+      POSTGRES_USER: archicore
+      POSTGRES_PASSWORD: archicore_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - archicore-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U archicore -d archicore"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  archicore-postgres-data:
