@@ -1,3 +1,4 @@
+using ArchiCore.Application.Abstractions.Persistence;
 using ArchiCore.Domain.Contracts;
 using ArchiCore.Domain.Customers;
 using ArchiCore.Domain.Projects;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArchiCore.Infrastructure.Persistence;
 
-public sealed class ArchiCoreDbContext(DbContextOptions<ArchiCoreDbContext> options) : DbContext(options)
+public sealed class ArchiCoreDbContext(DbContextOptions<ArchiCoreDbContext> options) : DbContext(options), IUnitOfWork
 {
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Contract> Contracts => Set<Contract>();
