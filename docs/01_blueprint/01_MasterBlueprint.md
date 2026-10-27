@@ -3,7 +3,7 @@
 | Campo | Valor |
 |--------|-------|
 | Documento | 01_MasterBlueprint |
-| Versión | 0.1.0 |
+| Versión | 1.0.1 |
 | Estado | Draft |
 | Fase | 1 - Business Analysis |
 | Sprint | 1.1 |
@@ -512,7 +512,7 @@ Frontend
 
 Backend
 
-- ASP.NET Core 9
+- ASP.NET Core 10 (.NET 10 LTS, target framework `net10.0`)
 - C#
 - Entity Framework Core
 - FluentValidation
@@ -940,3 +940,4 @@ The blueprint is a living document and may evolve through controlled revisions a
 | 0.2.0 | 2026-07-11 | Defined architecture, layers and business domains. |
 | 0.3.0 | 2026-07-11 | Defined modules, technology stack, security and scalability strategy. |
 | 1.0.0 | 2026-07-11 | Completed the Master Blueprint. |
+| 1.0.1 | 2026-10-26 | Aligned backend technology stack with the implemented .NET 10 LTS target; see ADR-003. |
