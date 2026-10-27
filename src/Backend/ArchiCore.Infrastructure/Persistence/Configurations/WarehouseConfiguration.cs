@@ -17,7 +17,7 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
         builder.Ignore(x => x.DomainEvents);
 
         builder.Property(x => x.WarehouseCode)
-            .HasConversion(DomainValueConverters.WarehouseCode)
+            .HasConversion(DomainValueConverters.WarehouseCodeConverter)
             .HasMaxLength(20)
             .IsRequired();
         builder.HasIndex(x => x.WarehouseCode).IsUnique();

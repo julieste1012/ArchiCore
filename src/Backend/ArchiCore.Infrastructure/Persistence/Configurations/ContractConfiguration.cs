@@ -19,7 +19,7 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
         builder.Ignore(x => x.DomainEvents);
 
         builder.Property(x => x.ContractNumber)
-            .HasConversion(DomainValueConverters.ContractNumber)
+            .HasConversion(DomainValueConverters.ContractNumberConverter)
             .HasMaxLength(20)
             .IsRequired();
         builder.HasIndex(x => x.ContractNumber).IsUnique();
@@ -43,7 +43,7 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             owned.Property<Guid>("ContractId");
             owned.Property(x => x.ProjectId).HasColumnName("ProjectId").IsRequired();
             owned.Property(x => x.ProjectCode)
-                .HasConversion(DomainValueConverters.ProjectCode)
+                .HasConversion(DomainValueConverters.ProjectCodeConverter)
                 .HasColumnName("ProjectCode")
                 .HasMaxLength(20)
                 .IsRequired();

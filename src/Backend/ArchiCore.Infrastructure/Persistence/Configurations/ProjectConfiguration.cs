@@ -19,7 +19,7 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Ignore(x => x.DomainEvents);
 
         builder.Property(x => x.ProjectCode)
-            .HasConversion(DomainValueConverters.ProjectCode)
+            .HasConversion(DomainValueConverters.ProjectCodeConverter)
             .HasMaxLength(20)
             .IsRequired();
         builder.Property(x => x.ContractId).IsRequired();

@@ -49,4 +49,4 @@ app.MapGet("/health/ready", async (ArchiCoreDbContext dbContext, CancellationTok
 
 app.Run();
 
-public partial class Program;
+public partial class Program { }

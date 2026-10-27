@@ -24,7 +24,9 @@ internal sealed class CustomerRepository(ArchiCoreDbContext dbContext) : ICustom
         => dbContext.Customers.CountAsync(cancellationToken);
 
     public async Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
-        => await dbContext.Customers.AddAsync(customer, cancellationToken);
+    {
+        await dbContext.Customers.AddAsync(customer, cancellationToken);
+    }
 }
 
 internal sealed class ContractRepository(ArchiCoreDbContext dbContext) : IContractRepository
@@ -50,7 +52,9 @@ internal sealed class ContractRepository(ArchiCoreDbContext dbContext) : IContra
     }
 
     public async Task AddAsync(Contract contract, CancellationToken cancellationToken = default)
-        => await dbContext.Contracts.AddAsync(contract, cancellationToken);
+    {
+        await dbContext.Contracts.AddAsync(contract, cancellationToken);
+    }
 }
 
 internal sealed class ProjectRepository(ArchiCoreDbContext dbContext) : IProjectRepository
@@ -76,7 +80,9 @@ internal sealed class ProjectRepository(ArchiCoreDbContext dbContext) : IProject
     }
 
     public async Task AddAsync(Project project, CancellationToken cancellationToken = default)
-        => await dbContext.Projects.AddAsync(project, cancellationToken);
+    {
+        await dbContext.Projects.AddAsync(project, cancellationToken);
+    }
 }
 
 internal sealed class WarehouseRepository(ArchiCoreDbContext dbContext) : IWarehouseRepository
@@ -95,5 +101,7 @@ internal sealed class WarehouseRepository(ArchiCoreDbContext dbContext) : IWareh
         => dbContext.Warehouses.CountAsync(cancellationToken);
 
     public async Task AddAsync(Warehouse warehouse, CancellationToken cancellationToken = default)
-        => await dbContext.Warehouses.AddAsync(warehouse, cancellationToken);
+    {
+        await dbContext.Warehouses.AddAsync(warehouse, cancellationToken);
+    }
 }

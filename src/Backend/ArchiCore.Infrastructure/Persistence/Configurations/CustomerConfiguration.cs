@@ -18,7 +18,7 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Ignore(x => x.DomainEvents);
 
         builder.Property(x => x.Nit)
-            .HasConversion(DomainValueConverters.Nit)
+            .HasConversion(DomainValueConverters.NitConverter)
             .HasColumnName("Nit")
             .HasMaxLength(20)
             .IsRequired();
@@ -32,7 +32,7 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             owned.Property<Guid>("CustomerId");
             owned.Property(x => x.ContractId).HasColumnName("ContractId").IsRequired();
             owned.Property(x => x.ContractNumber)
-                .HasConversion(DomainValueConverters.ContractNumber)
+                .HasConversion(DomainValueConverters.ContractNumberConverter)
                 .HasColumnName("ContractNumber")
                 .HasMaxLength(20)
                 .IsRequired();

@@ -9,22 +9,22 @@ namespace ArchiCore.Infrastructure.Persistence.Converters;
 /// </summary>
 internal static class DomainValueConverters
 {
-    public static readonly ValueConverter<Nit, string> Nit =
+    public static readonly ValueConverter<Nit, string> NitConverter =
         new(value => value.Value, value => ToNit(value));
 
-    public static readonly ValueConverter<ContractNumber, string> ContractNumber =
+    public static readonly ValueConverter<ContractNumber, string> ContractNumberConverter =
         new(value => value.Value, value => ToContractNumber(value));
 
-    public static readonly ValueConverter<ProjectCode, string> ProjectCode =
+    public static readonly ValueConverter<ProjectCode, string> ProjectCodeConverter =
         new(value => value.Value, value => ToProjectCode(value));
 
-    public static readonly ValueConverter<WarehouseCode, string> WarehouseCode =
+    public static readonly ValueConverter<WarehouseCode, string> WarehouseCodeConverter =
         new(value => value.Value, value => ToWarehouseCode(value));
 
-    private static Nit ToNit(string value) => EnsureValid(Nit.Create(value), "NIT");
-    private static ContractNumber ToContractNumber(string value) => EnsureValid(ContractNumber.Create(value), "ContractNumber");
-    private static ProjectCode ToProjectCode(string value) => EnsureValid(ProjectCode.Create(value), "ProjectCode");
-    private static WarehouseCode ToWarehouseCode(string value) => EnsureValid(WarehouseCode.Create(value), "WarehouseCode");
+    private static Nit ToNit(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.Nit.Create(value), "NIT");
+    private static ContractNumber ToContractNumber(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.ContractNumber.Create(value), "ContractNumber");
+    private static ProjectCode ToProjectCode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.ProjectCode.Create(value), "ProjectCode");
+    private static WarehouseCode ToWarehouseCode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.WarehouseCode.Create(value), "WarehouseCode");
 
     private static TValue EnsureValid<TValue>(ArchiCore.Domain.Common.Result<TValue> result, string name)
         => result.IsSuccess
