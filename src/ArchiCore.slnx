@@ -6,4 +6,7 @@
     <Project Path="Backend/ArchiCore.Infrastructure/ArchiCore.Infrastructure.csproj" />
     <Project Path="Backend/ArchiCore.Shared/ArchiCore.Shared.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/ArchiCore.Domain.Tests/ArchiCore.Domain.Tests.csproj" />
+  </Folder>
 </Solution>

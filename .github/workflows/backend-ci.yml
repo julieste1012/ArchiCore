@@ -1,0 +1,33 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Restore, build and test (.NET 10)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore src/ArchiCore.slnx
+
+      - name: Build
+        run: dotnet build src/ArchiCore.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test src/ArchiCore.slnx --configuration Release --no-build --no-restore
