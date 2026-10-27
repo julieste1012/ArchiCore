@@ -36,7 +36,7 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
         });
         builder.Navigation(x => x.TotalValue).IsRequired();
 
-        builder.OwnsMany<ContractProjectReference>("_projects", owned =>
+        builder.OwnsMany(x => x.Projects, owned =>
         {
             owned.ToTable("ContractProjects");
             owned.WithOwner().HasForeignKey("ContractId");
@@ -52,6 +52,6 @@ internal sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             owned.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Navigation("_projects").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(x => x.Projects).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

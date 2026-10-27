@@ -25,7 +25,7 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.HasIndex(x => x.Nit).IsUnique();
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
 
-        builder.OwnsMany<CustomerContractReference>("_contracts", owned =>
+        builder.OwnsMany(x => x.Contracts, owned =>
         {
             owned.ToTable("CustomerContracts");
             owned.WithOwner().HasForeignKey("CustomerId");
@@ -41,6 +41,6 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             owned.HasOne<Contract>().WithMany().HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Navigation("_contracts").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(x => x.Contracts).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

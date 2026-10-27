@@ -31,7 +31,7 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
 
         builder.HasIndex(x => new { x.ContractId, x.ProjectCode }).IsUnique();
 
-        builder.OwnsMany<ProjectWarehouseAssignment>("_warehouseAssignments", owned =>
+        builder.OwnsMany(x => x.WarehouseAssignments, owned =>
         {
             owned.ToTable("ProjectWarehouseAssignments");
             owned.WithOwner().HasForeignKey("ProjectId");
@@ -46,6 +46,6 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
                 .IsUnique();
         });
 
-        builder.Navigation("_warehouseAssignments").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(x => x.WarehouseAssignments).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
