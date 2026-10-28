@@ -58,6 +58,35 @@ public sealed class OutboxTests(ApiFixture fixture) : ApiTestBase(fixture)
         Assert.Equal(1, persistedEvents);
     }
 
+    [Fact]
+    public async Task Failed_aggregate_save_rolls_back_its_outbox_message_and_keeps_the_event_pending()
+    {
+        var existing = await CreateCustomerAsync();
+        var duplicateNit = Nit.Create(existing.Nit).Value;
+        var duplicateCustomer = Customer.Create(duplicateNit).Value;
+        var eventId = Assert.Single(duplicateCustomer.DomainEvents).Id;
+
+        var result = await Fixture.WithDbContextAsync(async db =>
+        {
+            db.Customers.Add(duplicateCustomer);
+
+            await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync(Ct));
+
+            // The failing customer insert and the event row share one transaction.
+            // The event stays in memory so the caller can handle/retry the failed unit of work.
+            Assert.Single(duplicateCustomer.DomainEvents);
+            var outboxRowExists = await db.OutboxMessages.AsNoTracking()
+                .AnyAsync(message => message.Id == eventId, Ct);
+            var customerRowCount = await db.Customers.AsNoTracking()
+                .CountAsync(customer => customer.Nit == duplicateNit, Ct);
+
+            return (OutboxRowExists: outboxRowExists, CustomerRowCount: customerRowCount);
+        });
+
+        Assert.False(result.OutboxRowExists);
+        Assert.Equal(1, result.CustomerRowCount);
+    }
+
     private static bool PayloadMatches(string payload, Guid customerId, string nit)
     {
         using var document = JsonDocument.Parse(payload);
