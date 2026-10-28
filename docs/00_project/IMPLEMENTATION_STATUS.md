@@ -6,8 +6,8 @@
 | Last audit | 2026-10-28 |
 | Baseline reviewed | `d86b56aefadc374a1a657e38211fc2d2f4252dd9` |
 | Integration branch | `develop` |
-| Current phase | Core API/persistence slice validated; integration test baseline green; security and documentary domain hardening pending |
-| Next critical work | Resolve domain decisions; add authentication/authorization, transactional domain-event handling, and approved documentary workflows |
+| Current phase | Core API/persistence, transactional outbox and automated integration coverage validated; security and documentary-domain decisions pending |
+| Next critical work | Define user/role security rules, add an idempotent outbox dispatcher and durable audit trail, then implement approved documentary workflows |
 
 > This document records observed repository state. A successful build does not mean that the ERP backend is functionally complete. Update this file after each significant phase.
 
@@ -39,29 +39,30 @@ These changes are on `develop`; `main` remains the stable branch and must not be
 - Manual end-to-end verification against the local PostgreSQL container: customer and warehouse creation/read-back; customer-contract association; contract-project association; warehouse assignment to a project and read-back of its active assignment.
 
 ### Automated tests and CI evidence
-- Domain/test project: 38 tests currently pass, including the persistence-model test that builds EF metadata and generates PostgreSQL DDL without connecting to a database.
-- Integration-test project: 18 tests use `WebApplicationFactory<Program>` plus a disposable PostgreSQL 17 Alpine container through Testcontainers. The tests apply the actual migration to an isolated temporary database and do not use the local Docker Compose volume.
-- Integration coverage: live/readiness health endpoints; customer and warehouse create/read/list and duplicate rejection; contract/customer and project/contract references in both directions; persistent warehouse assignment and duplicate assignment rejection; migration application, connection-string isolation, unique test identifiers and concurrent independent flows.
-- CI evidence: [GitHub Actions run for commit `09bc8fc`](https://github.com/julieste1012/ArchiCore/actions/runs/40787652936) completed successfully. Restore and Release build succeeded with 0 warnings and 0 errors; test summary: 56 passed, 0 failed, 0 skipped (38 domain + 18 integration).
-- This passing suite is evidence for the implemented core slice only. It does not establish that the full ERP backend or all business workflows are complete.
+- Domain/test project: 38 tests pass, including the EF model test that generates PostgreSQL DDL without connecting to a database.
+- Integration-test project: 28 tests use `WebApplicationFactory<Program>` and a disposable PostgreSQL 17 Alpine container through Testcontainers. They apply real EF migrations to an isolated temporary database and do not use the local Docker Compose volume.
+- Integration coverage: live/readiness health endpoints; customer/warehouse create, read and list; duplicate rejection; 404/409/422 error responses; customer-contract and contract-project references in both directions; active warehouse assignment persistence; complete tested lifecycle paths for Customer, Contract, Project and Warehouse; outbox persistence and event clearing after successful save; migration application; connection-string isolation; identifier uniqueness; and concurrent independent flows.
+- CI evidence: [GitHub Actions run for commit `2041ee0`](https://github.com/julieste1012/ArchiCore/actions/runs/40788607652) completed successfully. Restore and Release build succeeded; test summary: 66 passed, 0 failed, 0 skipped (38 domain/model + 28 integration).
+- The suite validates the implemented core slice only. It does not establish that the full ERP backend or all business workflows are complete.
 
 ### Known limits of the core API slice
-- Domain errors are mapped to HTTP 404/409/422 through matching error-code text; this should become a centralized explicit mapping.
-- Request validation is currently primarily domain Value Object validation and query-parameter ranges; there is no application-level validation pipeline.
+- The API maps known domain error codes explicitly to HTTP 404/409; other domain validation failures return 422. New domain error codes must be added to the mapping intentionally.
+- Request validation is primarily domain Value Object validation and query-parameter ranges; there is no general application validation pipeline yet.
 - Customer currently stores NIT, status and contract references only. Required organization/profile/contact fields remain open in `CustomerSpecification.md`.
 - `ContractStatus` includes `Cancelled`, but the domain has no `Cancel()` transition.
 - Box currently exists in the domain only: it has no EF mapping, application service or API endpoint.
-- Aggregates raise domain events, but the events are not yet persisted, dispatched or connected to a durable audit trail.
+- Domain events are now stored transactionally in `OutboxMessages` as JSONB and cleared from aggregates only after successful `SaveChanges`. There is not yet a dispatcher, retry/retention policy, or durable audit-trail processor. Unprocessed outbox rows will accumulate until that work is implemented.
 
 ### Not yet implemented / pending
 - User identity and authentication: password handling, JWT access tokens, refresh-token lifecycle, revocation, roles and authorization policies.
-- Persistent audit trail and domain-event dispatch/outbox.
+- Outbox dispatch/consumer pipeline, retry and poison-message policy, retention/cleanup, and persistent audit trail. The current outbox only guarantees durable transactional event capture.
 - File-storage abstraction and MinIO integration.
 - Documentary modules (Archive, Folder, Box persistence/API, Document and Folio), blocked by the unresolved domain decisions in section 3.
 - Business processes BP-001 to BP-014: the current API slice is not their implementation.
-- Application-level validation pipeline, explicit error mapping, and a versioned/documented API contract suitable for release.
-- Deployment hardening, backup and production secret handling beyond local Compose.
+- General application-level validation pipeline and a versioned/documented API contract suitable for release.
+- Deployment hardening, production secret handling, backup and restore verification beyond local Compose.
 - Frontend application (intentionally deferred until the backend contracts and workflows are ready).
+
 ## 3. Domain and requirements blockers
 
 Do not create persistence mappings or additional aggregate classes based on contradictory documents. The following require a documented decision or an approved specification:
@@ -82,14 +83,15 @@ The project AI Collaboration Protocol prohibits inventing business rules. Record
 
 1. **Domain decision record:** reconcile aggregate-root/entity ownership, contract/project cardinality, WarehouseLocation, lifecycle transitions and domain-event inconsistencies before implementing documentary persistence.
 2. **Close the approved domain model:** implement only documented decisions and strengthen tests for invariants and permitted/forbidden transitions.
-3. **Application/API hardening:** add a validation pipeline, replace string-substring error mapping with explicit codes, and publish a stable API contract for the core modules.
-4. **Transactional event handling and audit:** define durable event/outbox semantics, persist events atomically with aggregate changes, and test retries/idempotency before attaching downstream consumers.
+3. **Application/API hardening:** add an application validation pipeline and publish a stable, versioned API contract for the core modules.
+4. **Outbox processing and audit:** implement an allow-listed event dispatcher, idempotent handling, retries, poison-message strategy, retention and durable audit entries. The transactional outbox already captures events, but it does not deliver them.
 5. **Security:** formalize the user identity/role model from requirements, then implement password handling, JWT, refresh-token rotation/revocation, authorization policies and integration tests.
 6. **Documentary workflows:** after the decisions in section 3 are approved, implement archive/inventory, box/folder, location, search, loans/returns, digitization and billing in prioritized increments.
 7. **File storage:** implement the documented storage abstraction and MinIO integration, including authorization and audit behavior.
-8. **Integration/operational tests:** keep the passing PostgreSQL Testcontainers suite, extend it for validation/security/outbox and add clean migration/start-up checks.
+8. **Integration/operational tests:** extend the passing PostgreSQL Testcontainers suite for validation, security, event dispatch and clean migration/start-up checks.
 9. **Release gate:** clean restore/build/test, no high-severity package advisory, migration/deployment smoke test, secure configuration, backup guidance and documented endpoints.
 10. **Frontend:** begin only after the approved API contracts and priority end-to-end workflows are verified.
+
 ## 5. Definition of backend complete
 
 The backend is complete only when the approved in-scope workflows have server-side validation and working endpoints; data persists in PostgreSQL through versioned migrations; authentication and permissions protect applicable endpoints; file handling and audit behavior meet the documented requirements; domain/application logic and API/database flows are covered by automated tests; and a clean deployment starts reliably.
