@@ -40,9 +40,9 @@ These changes are on `develop`; `main` remains the stable branch and must not be
 
 ### Automated tests and CI evidence
 - Domain/test project: 38 tests pass, including the EF model test that generates PostgreSQL DDL without connecting to a database.
-- Integration-test project: 28 tests use `WebApplicationFactory<Program>` and a disposable PostgreSQL 17 Alpine container through Testcontainers. They apply real EF migrations to an isolated temporary database and do not use the local Docker Compose volume.
-- Integration coverage: live/readiness health endpoints; customer/warehouse create, read and list; duplicate rejection; 404/409/422 error responses; customer-contract and contract-project references in both directions; active warehouse assignment persistence; complete tested lifecycle paths for Customer, Contract, Project and Warehouse; outbox persistence and event clearing after successful save; migration application; connection-string isolation; identifier uniqueness; and concurrent independent flows.
-- CI evidence: [GitHub Actions run for commit `2041ee0`](https://github.com/julieste1012/ArchiCore/actions/runs/40788607652) completed successfully. Restore and Release build succeeded; test summary: 66 passed, 0 failed, 0 skipped (38 domain/model + 28 integration).
+- Integration-test project: 29 tests use `WebApplicationFactory<Program>` and a disposable PostgreSQL 17 Alpine container through Testcontainers. They apply real EF migrations to an isolated temporary database and do not use the local Docker Compose volume.
+- Integration coverage: live/readiness health endpoints; customer/warehouse create, read and list; duplicate rejection; 404/409/422 error responses; customer-contract and contract-project references in both directions; active warehouse assignment persistence; tested lifecycle paths for Customer, Contract, Project and Warehouse; outbox persistence, event clearing after successful saves and transaction rollback when an aggregate save fails; migration application; connection-string isolation; identifier uniqueness; and concurrent independent flows.
+- CI evidence: [GitHub Actions run for commit `0e4ec80`](https://github.com/julieste1012/ArchiCore/actions/runs/40788879167) completed successfully. Restore and Release build succeeded; test summary: 67 passed, 0 failed, 0 skipped (38 domain/model + 29 integration).
 - The suite validates the implemented core slice only. It does not establish that the full ERP backend or all business workflows are complete.
 
 ### Known limits of the core API slice
