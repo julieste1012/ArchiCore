@@ -8,5 +8,6 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/ArchiCore.Domain.Tests/ArchiCore.Domain.Tests.csproj" />
+    <Project Path="Tests/ArchiCore.Integration.Tests/ArchiCore.Integration.Tests.csproj" />
   </Folder>
 </Solution>
