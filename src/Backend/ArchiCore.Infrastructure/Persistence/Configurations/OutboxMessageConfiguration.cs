@@ -34,6 +34,6 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         // Index the pending queue without including already processed records.
         builder.HasIndex(x => x.EnqueuedAtUtc)
             .HasDatabaseName("IX_OutboxMessages_Pending")
-            .HasFilter("\\"ProcessedAtUtc\\" IS NULL");
+            .HasFilter("\"ProcessedAtUtc\\" IS NULL");
     }
 }
