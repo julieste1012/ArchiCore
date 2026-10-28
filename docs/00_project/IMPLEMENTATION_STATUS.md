@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Project | ArchiCore ERP |
-| Last audit | 2026-10-26 |
+| Last audit | 2026-10-28 |
 | Baseline reviewed | `d86b56aefadc374a1a657e38211fc2d2f4252dd9` |
 | Integration branch | `develop` |
-| Current phase | Backend foundation and domain hardening |
-| Next critical work | Resolve domain boundaries and implement application/persistence/API layers |
+| Current phase | Core API/persistence slice validated; integration test baseline green; security and documentary domain hardening pending |
+| Next critical work | Resolve domain decisions; add authentication/authorization, transactional domain-event handling, and approved documentary workflows |
 
 > This document records observed repository state. A successful build does not mean that the ERP backend is functionally complete. Update this file after each significant phase.
 
@@ -25,28 +25,43 @@ These changes are on `develop`; `main` remains the stable branch and must not be
 
 ### Solution and runtime
 - Solution: `src/ArchiCore.slnx`.
-- Projects: `ArchiCore.Domain`, `ArchiCore.Application`, `ArchiCore.Infrastructure`, `ArchiCore.Shared`, and `ArchiCore.API`.
-- All existing projects target `.NET 10` (`net10.0`).
-- The test runner is configured for Microsoft Testing Platform in `global.json`, as required for xUnit v3 with the .NET 10 SDK.
+- Backend projects: `ArchiCore.Domain`, `ArchiCore.Application`, `ArchiCore.Infrastructure`, `ArchiCore.Shared`, and `ArchiCore.API`.
+- Test projects: `ArchiCore.Domain.Tests` and `ArchiCore.Integration.Tests`.
+- All projects target .NET 10 (`net10.0`).
+- Tests use Microsoft Testing Platform with xUnit v3, consistent with `global.json`.
+- Local development uses PostgreSQL 17 through Docker Compose. The Compose host binding is `127.0.0.1:5433 -> container 5432` to avoid conflicts with a Windows-host PostgreSQL service. This setting is development-only.
 
-### Implemented, but not yet fully validated against approved requirements
-- Domain primitives: `Entity`, `IAggregateRoot`, `Result`, `Error`, `DomainEvent`, `IDomainEvent`.
-- Value objects: codes, NIT, email, phone, address, person name and money.
-- Domain classes: `Customer`, `Contract`, `Project`, `Warehouse`, `Box`, their states and the event classes currently present.
-- Tests cover selected current behavior for Result, value objects, Customer, Contract, Project, Warehouse and Box.
+### Implemented and manually validated
+- Domain primitives, value objects, and the current Customer, Contract, Project, Warehouse and Box domain model.
+- Core application services, DTOs and repositories for Customer, Contract, Project and Warehouse.
+- PostgreSQL persistence via EF Core 10/Npgsql, mappings and the `InitialCoreSchema` migration.
+- REST controllers for customers, contracts, projects and warehouses; pagination, selected lifecycle operations and `/health/live` / `/health/ready`.
+- Manual end-to-end verification against the local PostgreSQL container: customer and warehouse creation/read-back; customer-contract association; contract-project association; warehouse assignment to a project and read-back of its active assignment.
 
-The current tests are a regression baseline, not proof that the business model is complete. Some existing transitions and emitted events are incomplete or inconsistent with the specifications.
+### Automated tests and CI evidence
+- Domain/test project: 38 tests currently pass, including the persistence-model test that builds EF metadata and generates PostgreSQL DDL without connecting to a database.
+- Integration-test project: 18 tests use `WebApplicationFactory<Program>` plus a disposable PostgreSQL 17 Alpine container through Testcontainers. The tests apply the actual migration to an isolated temporary database and do not use the local Docker Compose volume.
+- Integration coverage: live/readiness health endpoints; customer and warehouse create/read/list and duplicate rejection; contract/customer and project/contract references in both directions; persistent warehouse assignment and duplicate assignment rejection; migration application, connection-string isolation, unique test identifiers and concurrent independent flows.
+- CI evidence: [GitHub Actions run for commit `09bc8fc`](https://github.com/julieste1012/ArchiCore/actions/runs/40787652936) completed successfully. Restore and Release build succeeded with 0 warnings and 0 errors; test summary: 56 passed, 0 failed, 0 skipped (38 domain + 18 integration).
+- This passing suite is evidence for the implemented core slice only. It does not establish that the full ERP backend or all business workflows are complete.
 
-### Not yet implemented / not found in the repository audit
-- Application use cases, commands, queries, DTOs and validation pipeline.
-- Infrastructure persistence implementation, EF Core `DbContext`, repository implementations and database migrations.
-- PostgreSQL configuration and operational startup.
-- Business controllers/endpoints and dependency-injection wiring in the API.
-- User/authentication implementation, JWT access tokens, refresh-token lifecycle and role-based authorization.
-- Persistent audit trail, file-storage abstraction / MinIO integration, and integration tests.
-- Docker/Compose configuration, health checks and deployment/backup setup.
-- Frontend application (intentionally deferred until the backend is ready).
+### Known limits of the core API slice
+- Domain errors are mapped to HTTP 404/409/422 through matching error-code text; this should become a centralized explicit mapping.
+- Request validation is currently primarily domain Value Object validation and query-parameter ranges; there is no application-level validation pipeline.
+- Customer currently stores NIT, status and contract references only. Required organization/profile/contact fields remain open in `CustomerSpecification.md`.
+- `ContractStatus` includes `Cancelled`, but the domain has no `Cancel()` transition.
+- Box currently exists in the domain only: it has no EF mapping, application service or API endpoint.
+- Aggregates raise domain events, but the events are not yet persisted, dispatched or connected to a durable audit trail.
 
+### Not yet implemented / pending
+- User identity and authentication: password handling, JWT access tokens, refresh-token lifecycle, revocation, roles and authorization policies.
+- Persistent audit trail and domain-event dispatch/outbox.
+- File-storage abstraction and MinIO integration.
+- Documentary modules (Archive, Folder, Box persistence/API, Document and Folio), blocked by the unresolved domain decisions in section 3.
+- Business processes BP-001 to BP-014: the current API slice is not their implementation.
+- Application-level validation pipeline, explicit error mapping, and a versioned/documented API contract suitable for release.
+- Deployment hardening, backup and production secret handling beyond local Compose.
+- Frontend application (intentionally deferred until the backend contracts and workflows are ready).
 ## 3. Domain and requirements blockers
 
 Do not create persistence mappings or additional aggregate classes based on contradictory documents. The following require a documented decision or an approved specification:
@@ -65,17 +80,16 @@ The project AI Collaboration Protocol prohibits inventing business rules. Record
 
 ## 4. Next implementation sequence
 
-1. **Domain decision record:** reconcile aggregate-root/entity ownership, contract/project cardinality, WarehouseLocation, lifecycle transitions and domain-event inconsistencies.
-2. **Close the domain model:** implement only approved gaps and complete tests for all invariants and permitted/forbidden state transitions.
-3. **Application layer:** commands/use cases, queries, DTOs, validation, repository interfaces and application services.
-4. **Infrastructure:** EF Core mappings for approved aggregates, PostgreSQL, repositories, migrations, transaction handling and file-storage abstraction.
-5. **API:** dependency-injection wiring, controllers/endpoints, request/response contracts, consistent errors, OpenAPI and health endpoints.
-6. **Security and audit:** user/role model, password handling, JWT and refresh tokens, authorization policies, token revocation and audit persistence.
-7. **Business workflows:** implement the approved reception/counting, documentary inventory, search, loans/returns, digitization and billing flows in prioritized increments.
-8. **Integration and operational tests:** PostgreSQL integration tests, API tests, Docker Compose, health checks, configuration and secret handling.
-9. **Release gate:** clean restore/build/test, no high-severity package advisory, migration/deployment smoke test, and documented API contract.
-10. **Frontend:** begin after backend integration contracts and end-to-end flows are verified.
-
+1. **Domain decision record:** reconcile aggregate-root/entity ownership, contract/project cardinality, WarehouseLocation, lifecycle transitions and domain-event inconsistencies before implementing documentary persistence.
+2. **Close the approved domain model:** implement only documented decisions and strengthen tests for invariants and permitted/forbidden transitions.
+3. **Application/API hardening:** add a validation pipeline, replace string-substring error mapping with explicit codes, and publish a stable API contract for the core modules.
+4. **Transactional event handling and audit:** define durable event/outbox semantics, persist events atomically with aggregate changes, and test retries/idempotency before attaching downstream consumers.
+5. **Security:** formalize the user identity/role model from requirements, then implement password handling, JWT, refresh-token rotation/revocation, authorization policies and integration tests.
+6. **Documentary workflows:** after the decisions in section 3 are approved, implement archive/inventory, box/folder, location, search, loans/returns, digitization and billing in prioritized increments.
+7. **File storage:** implement the documented storage abstraction and MinIO integration, including authorization and audit behavior.
+8. **Integration/operational tests:** keep the passing PostgreSQL Testcontainers suite, extend it for validation/security/outbox and add clean migration/start-up checks.
+9. **Release gate:** clean restore/build/test, no high-severity package advisory, migration/deployment smoke test, secure configuration, backup guidance and documented endpoints.
+10. **Frontend:** begin only after the approved API contracts and priority end-to-end workflows are verified.
 ## 5. Definition of backend complete
 
 The backend is complete only when the approved in-scope workflows have server-side validation and working endpoints; data persists in PostgreSQL through versioned migrations; authentication and permissions protect applicable endpoints; file handling and audit behavior meet the documented requirements; domain/application logic and API/database flows are covered by automated tests; and a clean deployment starts reliably.
