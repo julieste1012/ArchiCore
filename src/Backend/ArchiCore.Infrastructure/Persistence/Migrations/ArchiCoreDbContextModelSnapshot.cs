@@ -49,7 +49,7 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EnqueuedAtUtc")
                         .HasDatabaseName("IX_OutboxMessages_Pending")
-                        .HasFilter("\"ProcessedAtUtc\\" IS NULL");
+                        .HasFilter("\"ProcessedAtUtc\" IS NULL");
 
                     b.ToTable("OutboxMessages", (string)null);
                 });
