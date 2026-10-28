@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: archicore
       POSTGRES_PASSWORD: archicore_dev
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - archicore-postgres-data:/var/lib/postgresql/data
     healthcheck:
