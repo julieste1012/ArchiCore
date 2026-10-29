@@ -263,7 +263,10 @@ public sealed class AuthenticationService(
         => (email ?? string.Empty).Trim().ToUpperInvariant();
 
     private static string GenerateRefreshToken()
-        => Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(64));
+    {
+        var base64 = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        return base64.TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
 
     private static string HashRefreshToken(string rawToken)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
