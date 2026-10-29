@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FolderKanban, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, UsersRound } from 'lucide-react';
+import { AuditPage } from './pages/AuditPage';
+import { UsersPage } from './pages/UsersPage';
+import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, FolderKanban, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, UsersRound } from 'lucide-react';
 import { useAuth } from './auth/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -8,7 +10,7 @@ import { ContractsPage } from './pages/ContractsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { WarehousesPage } from './pages/WarehousesPage';
 
-export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses';
+export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'users' | 'audit';
 
 const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; section: string }[] = [
   { id: 'dashboard', label: 'Panel general', icon: LayoutDashboard, section: 'ESPACIO DE TRABAJO' },
@@ -16,6 +18,8 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
   { id: 'contracts', label: 'Contratos', icon: FileCheck2, section: 'GESTIÓN COMERCIAL' },
   { id: 'projects', label: 'Proyectos', icon: FolderKanban, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'warehouses', label: 'Bodegas', icon: PackageOpen, section: 'OPERACIÓN DOCUMENTAL' },
+  { id: 'users', label: 'Usuarios', icon: UsersRound, section: 'ADMINISTRACIÓN' },
+  { id: 'audit', label: 'Auditoría', icon: FileClock, section: 'ADMINISTRACIÓN' },
 ];
 
 const pageNames: Record<ViewKey, string> = {
@@ -24,6 +28,8 @@ const pageNames: Record<ViewKey, string> = {
   contracts: 'Contratos',
   projects: 'Proyectos',
   warehouses: 'Bodegas',
+  users: 'Usuarios',
+  audit: 'Auditoría',
 };
 
 export function App() {
@@ -32,6 +38,20 @@ export function App() {
 
   if (!user) return <LoginPage />;
 
+  if (user.role !== 'SystemAdministrator') {
+    return (
+      <main className="access-pending-screen">
+        <div className="access-pending-card">
+          <span className="brand-mark"><ShieldCheck size={25} /></span>
+          <p className="eyebrow">CUENTA AUTENTICADA</p>
+          <h1>Estamos preparando tu espacio.</h1>
+          <p>Tu cuenta está activa con el rol <strong>{user.role}</strong>. La matriz de permisos de cada módulo está pendiente de aprobación, por lo que las pantallas operativas permanecen temporalmente restringidas.</p>
+          <button className="primary-button" onClick={() => void logout()}><LogOut size={16} /> Cerrar sesión</button>
+        </div>
+      </main>
+    );
+  }
+
   const initials = user.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
   const viewContent = (() => {
     switch (view) {
@@ -39,6 +59,8 @@ export function App() {
       case 'contracts': return <ContractsPage />;
       case 'projects': return <ProjectsPage />;
       case 'warehouses': return <WarehousesPage />;
+      case 'users': return <UsersPage />;
+      case 'audit': return <AuditPage />;
       default: return <DashboardPage onNavigate={setView} />;
     }
   })();
@@ -64,12 +86,12 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="side-help-card"><span className="help-symbol"><ShieldCheck size={18} /></span><div><strong>Sesión protegida</strong><small>Acceso por roles</small></div><Activity size={15} /></div>
-          <button className="nav-item nav-settings" onClick={() => setView('dashboard')}><Settings2 size={18} /><span>Configuración</span></button>
+          <button className={`nav-item nav-settings ${view === 'users' ? 'nav-item-active' : ''}`} onClick={() => setView('users')}><Settings2 size={18} /><span>Administrar usuarios</span></button>
           <div className="sidebar-user"><span className="user-avatar">{initials || 'AC'}</span><span className="user-details"><strong>{user.displayName}</strong><small>{user.role}</small></span><button className="icon-button logout-button" title="Cerrar sesión" aria-label="Cerrar sesión" onClick={() => void logout()}><LogOut size={17} /></button></div>
         </div>
       </aside>
       <main className="main-area">
-        <header className="topbar"><div className="breadcrumb"><span>ArchiCore</span><span className="breadcrumb-slash">/</span><strong>{pageNames[view]}</strong></div><div className="topbar-actions"><span className="topbar-date">{new Date().toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</span><button className="icon-button notification-button" title="Notificaciones" aria-label="Notificaciones"><Bell size={18} /><span /></button><span className="topbar-divider" /><div className="topbar-user"><span className="user-avatar small-avatar">{initials || 'AC'}</span><span><strong>{user.displayName}</strong><small>Administrador</small></span></div></div></header>
+        <header className="topbar"><div className="breadcrumb"><span>ArchiCore</span><span className="breadcrumb-slash">/</span><strong>{pageNames[view]}</strong></div><div className="topbar-actions"><span className="topbar-date">{new Date().toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</span><button className={`icon-button notification-button ${view === 'audit' ? 'nav-item-active' : ''}`} title="Abrir auditoría" aria-label="Abrir auditoría" onClick={() => setView('audit')}><Bell size={18} /><span /></button><span className="topbar-divider" /><div className="topbar-user"><span className="user-avatar small-avatar">{initials || 'AC'}</span><span><strong>{user.displayName}</strong><small>{user.role}</small></span></div></div></header>
         <div className="page-content">{viewContent}</div>
         <footer className="app-footer"><span>ArchiCore ERP <span className="footer-separator">·</span> Núcleo operativo</span><span><span className="live-dot" /> API conectada <span className="footer-separator">·</span> v0.1.0</span></footer>
       </main>

@@ -84,6 +84,21 @@ export type Project = {
   warehouseAssignments: WarehouseAssignment[];
 };
 
+export type DomainEventAuditEntry = {
+  id: string;
+  eventType: string;
+  occurredOnUtc: string;
+  recordedAtUtc: string;
+  payload: string;
+};
+
+export type CreateUserRequest = {
+  email: string;
+  displayName: string;
+  password: string;
+  role: string;
+};
+
 export type ApiProblem = {
   title?: string;
   detail?: string;

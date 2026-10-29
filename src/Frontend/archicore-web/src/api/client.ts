@@ -111,6 +111,8 @@ export const api = {
   get: <T>(path: string) => send<T>(path),
   post: <T>(path: string, body?: unknown) =>
     send<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown) =>
+    send<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
   login: (email: string, password: string) =>
     send<AuthenticationResponse>('/auth/login', {
       method: 'POST',
