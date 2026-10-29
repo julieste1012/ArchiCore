@@ -18,7 +18,8 @@ public abstract class ApiControllerBase : ControllerBase
         "Project.WarehouseNotFound",
         "Project.WarehouseAssignmentNotFound",
         "Warehouse.NotFound",
-        "Authentication.UserNotFound"
+        "Authentication.UserNotFound",
+        "Audit.InvalidDateRange"
     };
 
     private static readonly HashSet<string> UnauthorizedErrorCodes = new(StringComparer.Ordinal)

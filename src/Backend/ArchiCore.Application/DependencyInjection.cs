@@ -1,3 +1,4 @@
+using ArchiCore.Application.Audit;
 using ArchiCore.Application.Contracts;
 using ArchiCore.Application.Customers;
 using ArchiCore.Application.Projects;
@@ -14,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<ContractService>();
         services.AddScoped<ProjectService>();
         services.AddScoped<WarehouseService>();
+        services.AddScoped<DomainEventAuditService>();
         return services;
     }
 }

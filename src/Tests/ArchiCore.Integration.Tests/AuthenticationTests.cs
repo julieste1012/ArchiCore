@@ -117,6 +117,9 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
         using var anonymous = Fixture.CreateAnonymousClient();
         using var response = await anonymous.GetAsync("/api/customers", Ct);
         await AssertStatusAsync(HttpStatusCode.Unauthorized, response);
+
+        using var auditResponse = await anonymous.GetAsync("/api/audit/domain-events", Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, auditResponse);
     }
 
     [Fact]
