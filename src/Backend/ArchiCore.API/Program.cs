@@ -6,6 +6,7 @@ using ArchiCore.Infrastructure;
 using ArchiCore.Infrastructure.Persistence;
 using ArchiCore.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,6 +62,21 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var problem = new ValidationProblemDetails(context.ModelState)
+        {
+            Status = StatusCodes.Status422UnprocessableEntity,
+            Title = "ValidationFailed",
+            Instance = context.HttpContext.Request.Path
+        };
+        problem.Extensions["code"] = "Api.ValidationFailed";
+        return new UnprocessableEntityObjectResult(problem);
+    };
+});
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

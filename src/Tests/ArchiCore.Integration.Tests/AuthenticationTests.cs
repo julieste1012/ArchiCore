@@ -152,6 +152,8 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
             role = AppRoles.ArchiveTechnician
         }, Ct);
         await AssertStatusAsync(HttpStatusCode.UnprocessableEntity, weak);
+        var validationProblem = await ReadBodyAsync<ProblemResponse>(weak);
+        Assert.Equal("Api.ValidationFailed", validationProblem.Code);
 
         var user = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
         using var duplicate = await Client.PostAsJsonAsync("/api/auth/users", new
