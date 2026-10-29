@@ -24,6 +24,9 @@ If `git status --short` shows local work before pulling, do not discard it. Reco
 
 ## 2. Start PostgreSQL
 
+The default object-storage provider is a local filesystem rooted at `src/Backend/ArchiCore.API/App_Data/Objects` during development. The directory is git-ignored. This keeps local work independent from an object-store server while the document metadata/lifecycle requirements are being finalized.
+
+
 At the repository root:
 
 ```powershell
@@ -48,6 +51,22 @@ $env:BootstrapAdmin__Password = Read-Host "Enter a strong local admin password (
 ```
 
 This example prompts for a password. Use a strong local value and do not commit it. If the key is regenerated on each restart, previously issued access tokens become invalid; for a stable local setup, save the signing key in .NET user-secrets and reuse it.
+
+### Optional: configure an S3-compatible object-storage endpoint
+
+The backend supports the MinIO .NET SDK adapter for MinIO/S3-compatible endpoints. Set these only when testing that adapter:
+
+```powershell
+$env:ObjectStorage__Provider = "Minio"
+$env:ObjectStorage__Endpoint = "127.0.0.1:9000"
+$env:ObjectStorage__AccessKey = "your-local-access-key"
+$env:ObjectStorage__SecretKey = "your-local-secret-key"
+$env:ObjectStorage__Bucket = "archicore-documents"
+$env:ObjectStorage__Secure = "false"
+$env:ObjectStorage__MaxObjectSizeBytes = "104857600"
+```
+
+Use credentials from a supported local object-store installation, never copy production credentials into the repository. The upstream MinIO community server repository was archived on April 25, 2026; its README states the server is no longer maintained. Do not use the archived community server as a production dependency. The app adapter is provider-configurable, but the exact production service must be selected and validated before release.
 
 ## 4. Apply migrations and start the API
 
@@ -99,4 +118,4 @@ npm run build
 
 ## Current scope limits
 
-The frontend currently includes login, dashboard and initial list/create screens for Customer, Contract, Project and Warehouse. The backend currently restricts operational controllers and the audit endpoint to SystemAdministrator until the endpoint permission matrix is approved. Documentary modules, MinIO workflows and actor-level security audit are not complete yet.
+The frontend currently includes login, dashboard and initial list/create screens for Customer, Contract, Project and Warehouse. The backend currently restricts operational controllers and the audit endpoint to SystemAdministrator until the endpoint permission matrix is approved. Documentary modules, file metadata/API workflows and actor-level security audit are not complete yet. Object storage is an infrastructure capability only; no upload/download API exposes it until document permissions and lifecycle are approved.

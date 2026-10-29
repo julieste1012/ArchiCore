@@ -48,7 +48,8 @@ Current phase: Core API + security + domain-event audit + first frontend slice
 - [x] Repository implementations and transaction support
 - [x] JWT signing/validation, password hashing, refresh-token rotation/revocation and temporary lockout
 - [x] Transactional Outbox, row-lock coordinated worker and durable domain-event audit projection
-- [ ] MinIO storage abstraction, bucket lifecycle and object authorization
+- [x] Provider-neutral object storage abstraction with key validation and filesystem/MinIO-SDK adapters
+- [ ] Select and validate a supported production S3-compatible service, bucket policy and object authorization
 - [ ] Actor-level security audit, outbox retention/poison-message handling and operational metrics
 
 ## Phase 5 — API ✅ Core endpoints/security implemented; permissions and workflows pending
@@ -86,7 +87,8 @@ Current phase: Core API + security + domain-event audit + first frontend slice
 - [x] Local PostgreSQL Compose service and health check
 - [x] Local connection port avoids conflict with Windows PostgreSQL
 - [ ] API and frontend Dockerfiles/Compose
-- [ ] MinIO service and secure configuration
+- [ ] Configure a supported object-store service and secure environment credentials
+- [ ] Validate provider lifecycle and retention policies
 - [ ] Production secret management, logging/metrics
 - [ ] Backup and restore validation; production smoke test
 

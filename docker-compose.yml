@@ -19,3 +19,7 @@ services:
 
 volumes:
   archicore-postgres-data:
+
+# Local document bytes are stored by the filesystem provider by default. Do not run the
+# archived MinIO community server as a production dependency. A compatible endpoint can
+# be selected through ObjectStorage__Provider=Minio for evaluation/development.

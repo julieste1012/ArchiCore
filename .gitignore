@@ -35,3 +35,6 @@ logs/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Development object storage
+**/App_Data/Objects/

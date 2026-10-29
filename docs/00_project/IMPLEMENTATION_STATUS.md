@@ -7,8 +7,8 @@
 | Stable branch | `main` |
 | Integration target | `develop` |
 | Active implementation branch | `feat/backend-core-api` (PR #7, not yet merged) |
-| Current phase | Core API, PostgreSQL persistence, JWT authentication, transactional outbox/audit projection and the initial React frontend are implemented |
-| Next critical work | Complete CI review on the active head; add object storage and approved documentary workflows without inventing unresolved business rules |
+| Current phase | Core API, PostgreSQL persistence, JWT authentication, transactional outbox/audit projection, provider-neutral object storage and the initial React frontend are implemented |
+| Next critical work | Complete CI review; define approved document metadata and lifecycle; select a supported production S3-compatible service and implement the documentary workflows |
 
 > A passing test suite validates the implemented slice, not the completeness of the ERP. This document distinguishes completed infrastructure from business workflows that still lack approved specifications.
 
@@ -38,6 +38,12 @@ The current backend/security/frontend work described below is on the active feat
 - Bootstrap administrator creation is opt-in via environment configuration. No application signing key or bootstrap password is committed to source control.
 - All four current operational controllers and the audit endpoint currently require the `SystemAdministrator` role because the approved business-role document defines responsibilities but no final endpoint permission matrix.
 - This is a technical authentication boundary, not yet the full personnel/User domain module. MFA, password reset, security-event auditing and distributed rate limiting remain future work.
+
+### Object storage
+- Application exposes `IObjectStorage` for storing, streaming and deleting object bytes, with a shared object-key policy that blocks traversal paths and unsafe keys.
+- Development defaults to a filesystem provider under the API content root, with temporary-file writes and declared-length verification. Object data under `App_Data/Objects` is git-ignored.
+- An S3-compatible adapter using the MinIO .NET SDK is available through `ObjectStorage:Provider=Minio`; endpoint, bucket, credentials and size limit are configurable via environment variables. No public file endpoint was added because file metadata, permissions, retention and business lifecycle are not yet approved.
+- Important infrastructure decision: the upstream MinIO server repository was archived on 2026-04-25 and states that the community server is no longer maintained. The adapter is S3-compatible, but the archived community server is not treated as a production-ready dependency. Select a supported S3-compatible service and review licensing/security before release.
 
 ### Transactional outbox and domain-event audit
 - `ArchiCoreDbContext.SaveChanges/SaveChangesAsync` persists domain events to `OutboxMessages` in the same transaction as aggregate updates, and clears the in-memory events only after successful saving.
@@ -70,7 +76,7 @@ Do not implement documentary persistence based on contradictory draft documents.
 7. **Lifecycle gaps:** some Box/Warehouse states and catalogued events are not fully reachable or emitted by current domain methods.
 8. **Business processes:** BP-001 and BP-002 are written as initial workflows, but their operational API/use-case coverage is not complete; BP-003 to BP-014 remain pending in the index.
 9. **Security and audit requirements:** the technical login and domain-event audit are implemented, but the final per-role permission matrix, actor-level audit requirements, retention and incident-response policy are not approved.
-10. **Object storage:** MinIO integration and the approved file/document metadata workflow remain pending.
+10. **Object storage:** the provider abstraction and development filesystem/MinIO-SDK adapters now exist; selecting and validating a supported production storage service and approving file metadata/lifecycle remain pending.
 
 The project collaboration protocol prohibits silently inventing business rules. Resolve these decisions before adding the Archive/Folder/Box/Document/Folio and Loan models.
 
@@ -80,7 +86,7 @@ The project collaboration protocol prohibits silently inventing business rules. 
 2. **Local setup and smoke test:** apply all migrations to the local development database; create the bootstrap administrator using local environment variables; verify login and the four core modules in the browser.
 3. **Security hardening:** add explicit role/endpoint permission matrix from approved business responsibilities; add actor-level security audit; define rate limiting, credential recovery and token/session policy.
 4. **Operational audit:** define retries, poison-message handling, retention, cleanup and monitoring for the domain-event processor.
-5. **Object storage:** implement MinIO abstraction/configuration and object lifecycle once file metadata and authorization contracts are approved.
+5. **Object storage:** select a supported production S3-compatible service and validate its security/licensing posture; the application abstraction/adapters are in place, while file metadata and authorization contracts await approval.
 6. **Domain decision record:** resolve aggregate boundaries, cardinality, WarehouseLocation, lifecycle transitions and event catalog.
 7. **Documentary workflows:** implement the approved reception/counting, classification, folder/box storage, search, loans/returns, digitization, billing and contract-closure flows with integration tests.
 8. **Frontend:** complete module forms, role-aware interactions and error/loading states against the agreed API; add frontend component/flow tests.
