@@ -96,6 +96,41 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
     }
 
     [Fact]
+    public async Task Concurrent_refresh_requests_can_redeem_a_refresh_token_only_once()
+    {
+        using var setupClient = Fixture.CreateAnonymousClient();
+        var user = await CreateUserAsync(setupClient, AppRoles.SystemAdministrator);
+        var originalSession = await LoginAsync(setupClient, user.Email);
+
+        using var clientA = Fixture.CreateAnonymousClient();
+        using var clientB = Fixture.CreateAnonymousClient();
+
+        // Both requests start from the same unconsumed refresh token. The row concurrency
+        // token plus transaction must allow exactly one rotation to commit.
+        var responses = await Task.WhenAll(
+            clientA.PostAsJsonAsync("/api/auth/refresh",
+                new { refreshToken = originalSession.RefreshToken }, Ct),
+            clientB.PostAsJsonAsync("/api/auth/refresh",
+                new { refreshToken = originalSession.RefreshToken }, Ct));
+
+        using var responseA = responses[0];
+        using var responseB = responses[1];
+
+        var successful = responses.Where(response => response.StatusCode == HttpStatusCode.OK).ToArray();
+        var rejected = responses.Where(response => response.StatusCode == HttpStatusCode.Unauthorized).ToArray();
+
+        Assert.Single(successful);
+        Assert.Single(rejected);
+
+        var rotated = await ReadBodyAsync<AuthenticationResponse>(successful[0]);
+        Assert.NotEqual(originalSession.RefreshToken, rotated.RefreshToken);
+
+        using var replay = await clientA.PostAsJsonAsync("/api/auth/refresh",
+            new { refreshToken = originalSession.RefreshToken }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, replay);
+    }
+
+    [Fact]
     public async Task Logout_revokes_refresh_token()
     {
         using var anonymous = Fixture.CreateAnonymousClient();
@@ -185,7 +220,7 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
         using var page = await Client.GetAsync("/api/auth/users?page=1&pageSize=1", Ct);
         await AssertStatusAsync(HttpStatusCode.OK, page);
         var result = await ReadBodyAsync<PagedResponse<UserAccountDto>>(page);
-        Assert.Equal(1, result.Items.Count);
+        Assert.Single(result.Items);
         Assert.True(result.TotalCount >= 2);
     }
 
