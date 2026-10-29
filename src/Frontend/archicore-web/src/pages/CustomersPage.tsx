@@ -5,6 +5,13 @@ import type { Customer, PagedResult } from '../api/types';
 import { ErrorMessage, LoadingState, SuccessMessage } from '../components/Feedback';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { LifecycleActions, type LifecycleActionSpec } from '../components/LifecycleActions';
+
+const customerLifecycleActions: LifecycleActionSpec[] = [
+  { fromStatus: 'Prospect', endpoint: 'activate', label: 'Activar', successStatus: 'Activo' },
+  { fromStatus: 'Active', endpoint: 'deactivate', label: 'Desactivar', successStatus: 'Inactivo', confirmationMessage: '¿Desactivar este cliente? Dejará de estar activo para la operación.' },
+  { fromStatus: 'Inactive', endpoint: 'archive', label: 'Archivar', successStatus: 'Archivado', confirmationMessage: '¿Archivar este cliente? Esta acción cambia su estado de forma permanente.' },
+];
 
 export function CustomersPage() {
   const [data, setData] = useState<PagedResult<Customer> | null>(null);
@@ -15,6 +22,7 @@ export function CustomersPage() {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
 
   async function load() {
     setBusy(true); setError('');
@@ -34,6 +42,21 @@ export function CustomersPage() {
     finally { setSaving(false); }
   }
 
+  async function transition(customer: Customer, action: LifecycleActionSpec) {
+    setTransitioningId(customer.id);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post<Customer>(`/customers/${customer.id}/${action.endpoint}`);
+      setSuccess(`Cliente ${customer.nit}: estado actualizado a ${action.successStatus.toLowerCase()}.`);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo actualizar el estado del cliente.');
+    } finally {
+      setTransitioningId(null);
+    }
+  }
+
   const rows = (data?.items ?? []).filter((c) => !search || c.nit.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -45,8 +68,8 @@ export function CustomersPage() {
       <section className="content-card table-card">
         <div className="table-toolbar"><div><h2>Directorio de clientes</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por NIT" aria-label="Buscar por NIT" /></label></div>
         {busy ? <LoadingState label="Consultando clientes…" /> : rows.length === 0 ? <div className="empty-state"><UserRound size={25} /><strong>No hay clientes que mostrar</strong><span>Prueba otra búsqueda o registra un nuevo cliente.</span></div> :
-          <div className="table-scroll"><table><thead><tr><th>CLIENTE / NIT</th><th>ESTADO</th><th>CONTRATOS</th><th>FECHA DE REGISTRO</th><th></th></tr></thead><tbody>
-            {rows.map((customer) => <tr key={customer.id}><td><span className="table-avatar"><UserRound size={17} /></span><span className="main-cell"><strong>{customer.nit}</strong><small>ID {customer.id.slice(0, 8).toUpperCase()}</small></span></td><td><StatusBadge status={customer.status} /></td><td><span className="count-chip">{customer.contracts.length}</span></td><td>{new Date(customer.createdAt).toLocaleDateString('es-CO')}</td><td><button className="table-action" title="Consultar cliente" onClick={() => setSearch(customer.nit)}>Ver ficha</button></td></tr>)}
+          <div className="table-scroll"><table><thead><tr><th>CLIENTE / NIT</th><th>ESTADO</th><th>CONTRATOS</th><th>FECHA DE REGISTRO</th><th>ACCIONES</th></tr></thead><tbody>
+            {rows.map((customer) => <tr key={customer.id}><td><span className="table-avatar"><UserRound size={17} /></span><span className="main-cell"><strong>{customer.nit}</strong><small>ID {customer.id.slice(0, 8).toUpperCase()}</small></span></td><td><StatusBadge status={customer.status} /></td><td><span className="count-chip">{customer.contracts.length}</span></td><td>{new Date(customer.createdAt).toLocaleDateString('es-CO')}</td><td><LifecycleActions status={customer.status} actions={customerLifecycleActions} busy={transitioningId === customer.id} onAction={(action) => void transition(customer, action)} /></td></tr>)}
           </tbody></table></div>}
       </section>
     </>

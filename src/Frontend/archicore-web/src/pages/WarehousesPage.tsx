@@ -5,6 +5,15 @@ import type { PagedResult, Warehouse } from '../api/types';
 import { ErrorMessage, LoadingState, SuccessMessage } from '../components/Feedback';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { LifecycleActions, type LifecycleActionSpec } from '../components/LifecycleActions';
+
+const warehouseLifecycleActions: LifecycleActionSpec[] = [
+  { fromStatus: 'Available', endpoint: 'activate', label: 'Activar', successStatus: 'Operativa' },
+  { fromStatus: 'Operational', endpoint: 'maintenance/start', label: 'Mantenimiento', successStatus: 'En mantenimiento', confirmationMessage: '¿Iniciar mantenimiento de esta bodega?' },
+  { fromStatus: 'Maintenance', endpoint: 'maintenance/finish', label: 'Finalizar mantenimiento', successStatus: 'Operativa' },
+  { fromStatus: 'Maintenance', endpoint: 'close', label: 'Cerrar', successStatus: 'Cerrada', confirmationMessage: '¿Cerrar esta bodega? Verifica primero que no tenga material en custodia.' },
+  { fromStatus: 'Closed', endpoint: 'archive', label: 'Archivar', successStatus: 'Archivada', confirmationMessage: '¿Archivar esta bodega? Esta acción cambia su estado de forma permanente.' },
+];
 
 export function WarehousesPage() {
   const [data, setData] = useState<PagedResult<Warehouse> | null>(null);
@@ -15,6 +24,7 @@ export function WarehousesPage() {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
 
   async function load() {
     setBusy(true); setError('');
@@ -34,6 +44,21 @@ export function WarehousesPage() {
     finally { setSaving(false); }
   }
 
+  async function transition(warehouse: Warehouse, action: LifecycleActionSpec) {
+    setTransitioningId(warehouse.id);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post<Warehouse>(`/warehouses/${warehouse.id}/${action.endpoint}`);
+      setSuccess(`Bodega ${warehouse.warehouseCode}: estado actualizado a ${action.successStatus.toLowerCase()}.`);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo actualizar el estado de la bodega.');
+    } finally {
+      setTransitioningId(null);
+    }
+  }
+
   const rows = (data?.items ?? []).filter((w) => !search || w.warehouseCode.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -45,8 +70,8 @@ export function WarehousesPage() {
       <section className="content-card table-card">
         <div className="table-toolbar"><div><h2>Inventario de bodegas</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por código" aria-label="Buscar por código" /></label></div>
         {busy ? <LoadingState label="Consultando bodegas…" /> : rows.length === 0 ? <div className="empty-state"><WarehouseIcon size={25} /><strong>No hay bodegas que mostrar</strong><span>Prueba otra búsqueda o registra una bodega.</span></div> :
-          <div className="table-scroll"><table><thead><tr><th>CÓDIGO</th><th>ESTADO</th><th>PROYECTOS</th><th>FECHA DE REGISTRO</th><th></th></tr></thead><tbody>
-            {rows.map((warehouse) => <tr key={warehouse.id}><td><span className="table-avatar table-avatar-green"><WarehouseIcon size={17} /></span><span className="main-cell"><strong>{warehouse.warehouseCode}</strong><small>ID {warehouse.id.slice(0, 8).toUpperCase()}</small></span></td><td><StatusBadge status={warehouse.status} /></td><td><span className="count-chip">Con asignación por proyecto</span></td><td>{new Date(warehouse.createdAt).toLocaleDateString('es-CO')}</td><td><button className="table-action" title="Buscar bodega" onClick={() => setSearch(warehouse.warehouseCode)}>Ver ficha</button></td></tr>)}
+          <div className="table-scroll"><table><thead><tr><th>CÓDIGO</th><th>ESTADO</th><th>UBICACIÓN FÍSICA</th><th>FECHA DE REGISTRO</th><th>ACCIONES</th></tr></thead><tbody>
+            {rows.map((warehouse) => <tr key={warehouse.id}><td><span className="table-avatar table-avatar-green"><WarehouseIcon size={17} /></span><span className="main-cell"><strong>{warehouse.warehouseCode}</strong><small>ID {warehouse.id.slice(0, 8).toUpperCase()}</small></span></td><td><StatusBadge status={warehouse.status} /></td><td><span className="count-chip">Pendiente de modelar</span></td><td>{new Date(warehouse.createdAt).toLocaleDateString('es-CO')}</td><td><LifecycleActions status={warehouse.status} actions={warehouseLifecycleActions} busy={transitioningId === warehouse.id} onAction={(action) => void transition(warehouse, action)} /></td></tr>)}
           </tbody></table></div>}
       </section>
     </>

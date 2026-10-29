@@ -5,6 +5,13 @@ import type { Contract, Customer, PagedResult } from '../api/types';
 import { ErrorMessage, LoadingState, SuccessMessage } from '../components/Feedback';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { LifecycleActions, type LifecycleActionSpec } from '../components/LifecycleActions';
+
+const contractLifecycleActions: LifecycleActionSpec[] = [
+  { fromStatus: 'Draft', endpoint: 'activate', label: 'Activar', successStatus: 'Activo' },
+  { fromStatus: 'Active', endpoint: 'suspend', label: 'Suspender', successStatus: 'Suspendido', confirmationMessage: '¿Suspender este contrato?' },
+  { fromStatus: 'Suspended', endpoint: 'activate', label: 'Reactivar', successStatus: 'Activo' },
+];
 
 export function ContractsPage() {
   const [data, setData] = useState<PagedResult<Contract> | null>(null);
@@ -20,6 +27,7 @@ export function ContractsPage() {
   const [currency, setCurrency] = useState('COP');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
 
   async function load() {
     setBusy(true); setError('');
@@ -51,6 +59,21 @@ export function ContractsPage() {
     finally { setSaving(false); }
   }
 
+  async function transition(contract: Contract, action: LifecycleActionSpec) {
+    setTransitioningId(contract.id);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post<Contract>(`/contracts/${contract.id}/${action.endpoint}`);
+      setSuccess(`Contrato ${contract.contractNumber}: estado actualizado a ${action.successStatus.toLowerCase()}.`);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo actualizar el estado del contrato.');
+    } finally {
+      setTransitioningId(null);
+    }
+  }
+
   const rows = (data?.items ?? []).filter((c) => !search || c.contractNumber.toLowerCase().includes(search.toLowerCase()));
   return (
     <>
@@ -69,7 +92,7 @@ export function ContractsPage() {
       </section>}
       <section className="content-card table-card"><div className="table-toolbar"><div><h2>Contratos registrados</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar número" aria-label="Buscar contrato" /></label></div>
         {busy ? <LoadingState label="Consultando contratos…" /> : rows.length === 0 ? <div className="empty-state"><FileCheck2 size={25} /><strong>No hay contratos que mostrar</strong><span>Registra un contrato asociado a un cliente.</span></div> :
-        <div className="table-scroll"><table><thead><tr><th>CONTRATO</th><th>CLIENTE</th><th>VALOR</th><th>ESTADO</th><th>INICIO</th></tr></thead><tbody>{rows.map((c) => <tr key={c.id}><td><span className="table-avatar table-avatar-blue"><FileCheck2 size={17} /></span><span className="main-cell"><strong>{c.contractNumber}</strong><small>ID {c.id.slice(0, 8).toUpperCase()}</small></span></td><td>{customers.find((cl) => cl.id === c.clientId)?.nit ?? c.clientId.slice(0, 8)}</td><td><strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: c.currency, maximumFractionDigits: 0 }).format(c.totalValue)}</strong></td><td><StatusBadge status={c.status} /></td><td>{new Date(c.startDate).toLocaleDateString('es-CO')}</td></tr>)}</tbody></table></div>}
+        <div className="table-scroll"><table><thead><tr><th>CONTRATO</th><th>CLIENTE</th><th>VALOR</th><th>ESTADO</th><th>INICIO</th><th>ACCIONES</th></tr></thead><tbody>{rows.map((c) => <tr key={c.id}><td><span className="table-avatar table-avatar-blue"><FileCheck2 size={17} /></span><span className="main-cell"><strong>{c.contractNumber}</strong><small>ID {c.id.slice(0, 8).toUpperCase()}</small></span></td><td>{customers.find((cl) => cl.id === c.clientId)?.nit ?? c.clientId.slice(0, 8)}</td><td><strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: c.currency, maximumFractionDigits: 0 }).format(c.totalValue)}</strong></td><td><StatusBadge status={c.status} /></td><td>{new Date(c.startDate).toLocaleDateString('es-CO')}</td><td><LifecycleActions status={c.status} actions={contractLifecycleActions} busy={transitioningId === c.id} onAction={(action) => void transition(c, action)} /></td></tr>)}</tbody></table></div>}
       </section>
     </>
   );

@@ -5,6 +5,17 @@ import type { Contract, PagedResult, Project } from '../api/types';
 import { ErrorMessage, LoadingState, SuccessMessage } from '../components/Feedback';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { LifecycleActions, type LifecycleActionSpec } from '../components/LifecycleActions';
+
+const projectLifecycleActions: LifecycleActionSpec[] = [
+  { fromStatus: 'Draft', endpoint: 'plan', label: 'Planificar', successStatus: 'Planificado' },
+  { fromStatus: 'Planned', endpoint: 'start', label: 'Iniciar', successStatus: 'Activo' },
+  { fromStatus: 'Active', endpoint: 'suspend', label: 'Suspender', successStatus: 'Suspendido', confirmationMessage: '¿Suspender este proyecto?' },
+  { fromStatus: 'Suspended', endpoint: 'resume', label: 'Reanudar', successStatus: 'Activo' },
+  { fromStatus: 'Active', endpoint: 'complete', label: 'Completar', successStatus: 'Completado', confirmationMessage: '¿Marcar este proyecto como completado?' },
+  { fromStatus: 'Completed', endpoint: 'close', label: 'Cerrar', successStatus: 'Cerrado', confirmationMessage: '¿Cerrar este proyecto? No podrá continuar su operación.' },
+  { fromStatus: 'Closed', endpoint: 'archive', label: 'Archivar', successStatus: 'Archivado', confirmationMessage: '¿Archivar este proyecto? Esta acción cambia su estado de forma permanente.' },
+];
 
 export function ProjectsPage() {
   const [data, setData] = useState<PagedResult<Project> | null>(null);
@@ -17,6 +28,7 @@ export function ProjectsPage() {
   const [contractId, setContractId] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
 
   async function load() {
     setBusy(true); setError('');
@@ -42,6 +54,21 @@ export function ProjectsPage() {
     finally { setSaving(false); }
   }
 
+  async function transition(project: Project, action: LifecycleActionSpec) {
+    setTransitioningId(project.id);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post<Project>(`/projects/${project.id}/${action.endpoint}`);
+      setSuccess(`Proyecto ${project.projectCode}: estado actualizado a ${action.successStatus.toLowerCase()}.`);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo actualizar el estado del proyecto.');
+    } finally {
+      setTransitioningId(null);
+    }
+  }
+
   const rows = (data?.items ?? []).filter((p) => !search || p.projectCode.toLowerCase().includes(search.toLowerCase()));
   return (
     <>
@@ -53,7 +80,7 @@ export function ProjectsPage() {
       </section>}
       <section className="content-card table-card"><div className="table-toolbar"><div><h2>Proyectos registrados</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar código" aria-label="Buscar proyecto" /></label></div>
         {busy ? <LoadingState label="Consultando proyectos…" /> : rows.length === 0 ? <div className="empty-state"><FolderKanban size={25} /><strong>No hay proyectos que mostrar</strong><span>Crea un proyecto vinculado a un contrato.</span></div> :
-        <div className="table-scroll"><table><thead><tr><th>PROYECTO</th><th>CONTRATO</th><th>ESTADO</th><th>BODEGAS ASIGNADAS</th><th>INICIO</th></tr></thead><tbody>{rows.map((p) => <tr key={p.id}><td><span className="table-avatar table-avatar-purple"><FolderKanban size={17} /></span><span className="main-cell"><strong>{p.projectCode}</strong><small>ID {p.id.slice(0, 8).toUpperCase()}</small></span></td><td>{contracts.find((c) => c.id === p.contractId)?.contractNumber ?? p.contractId.slice(0, 8)}</td><td><StatusBadge status={p.status} /></td><td><span className="count-chip">{p.warehouseAssignments.length}</span></td><td>{p.startDate ? new Date(p.startDate).toLocaleDateString('es-CO') : '—'}</td></tr>)}</tbody></table></div>}
+        <div className="table-scroll"><table><thead><tr><th>PROYECTO</th><th>CONTRATO</th><th>ESTADO</th><th>BODEGAS ASIGNADAS</th><th>INICIO</th><th>ACCIONES</th></tr></thead><tbody>{rows.map((p) => <tr key={p.id}><td><span className="table-avatar table-avatar-purple"><FolderKanban size={17} /></span><span className="main-cell"><strong>{p.projectCode}</strong><small>ID {p.id.slice(0, 8).toUpperCase()}</small></span></td><td>{contracts.find((c) => c.id === p.contractId)?.contractNumber ?? p.contractId.slice(0, 8)}</td><td><StatusBadge status={p.status} /></td><td><span className="count-chip">{p.warehouseAssignments.length}</span></td><td>{p.startDate ? new Date(p.startDate).toLocaleDateString('es-CO') : '—'}</td><td><LifecycleActions status={p.status} actions={projectLifecycleActions} busy={transitioningId === p.id} onAction={(action) => void transition(p, action)} /></td></tr>)}</tbody></table></div>}
       </section>
     </>
   );

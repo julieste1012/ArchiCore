@@ -18,15 +18,15 @@ public sealed class ObjectStorageTests
 
             await using (var input = new MemoryStream(payload))
             {
-                await storage.StoreAsync("contracts/contract-01/document-01.txt", input, payload.Length, "text/plain");
+                await storage.StoreAsync("contracts/contract-01/document-01.txt", input, payload.Length, "text/plain", TestContext.Current.CancellationToken);
             }
 
             await using var output = new MemoryStream();
-            await storage.CopyToAsync("contracts/contract-01/document-01.txt", output);
+            await storage.CopyToAsync("contracts/contract-01/document-01.txt", output, TestContext.Current.CancellationToken);
 
             Assert.Equal(payload, output.ToArray());
 
-            await storage.DeleteAsync("contracts/contract-01/document-01.txt");
+            await storage.DeleteAsync("contracts/contract-01/document-01.txt", TestContext.Current.CancellationToken);
             Assert.False(File.Exists(Path.Combine(root, "contracts", "contract-01", "document-01.txt")));
         }
         finally
@@ -62,7 +62,7 @@ public sealed class ObjectStorageTests
 
             await using var input = new MemoryStream(payload);
             await Assert.ThrowsAsync<InvalidDataException>(() =>
-                storage.StoreAsync("test/mismatch.bin", input, contentLength: 3, "application/octet-stream"));
+                storage.StoreAsync("test/mismatch.bin", input, 3, "application/octet-stream", TestContext.Current.CancellationToken));
 
             Assert.False(File.Exists(Path.Combine(root, "test", "mismatch.bin")));
             Assert.Empty(Directory.Exists(Path.Combine(root, "test"))
@@ -88,7 +88,7 @@ public sealed class ObjectStorageTests
             await using var input = new MemoryStream(new byte[4]);
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
-                storage.StoreAsync("test/too-large.bin", input, contentLength: 4, "application/octet-stream"));
+                storage.StoreAsync("test/too-large.bin", input, 4, "application/octet-stream", TestContext.Current.CancellationToken));
         }
         finally
         {
