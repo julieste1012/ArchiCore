@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Text;
 using ArchiCore.Application.Authentication;
+using ArchiCore.Application.Common;
 using ArchiCore.Domain.Common;
 using ArchiCore.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
