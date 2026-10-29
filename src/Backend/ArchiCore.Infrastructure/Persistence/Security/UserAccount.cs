@@ -75,6 +75,12 @@ public sealed class UserAccount
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    internal void InvalidateSessions(DateTime nowUtc)
+    {
+        TokenVersion++;
+        UpdatedAtUtc = nowUtc;
+    }
+
     internal void ChangePasswordHash(string hash, DateTime nowUtc)
     {
         if (string.IsNullOrWhiteSpace(hash))

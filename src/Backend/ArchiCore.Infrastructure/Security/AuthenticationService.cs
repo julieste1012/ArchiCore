@@ -78,10 +78,24 @@ public sealed class AuthenticationService(
             .SingleOrDefaultAsync(token => token.TokenHash == suppliedHash, cancellationToken);
 
         var now = DateTime.UtcNow;
-        if (existing is null
-            || existing.RevokedAtUtc is not null
-            || existing.ExpiresAtUtc <= now
-            || !existing.UserAccount.IsActive)
+        if (existing is null)
+        {
+            return InvalidRefreshToken();
+        }
+
+        if (existing.RevokedAtUtc is not null)
+        {
+            // A token that was rotated and later presented again is a replay signal.
+            // Revoke all sessions for this account instead of leaving the replacement session usable.
+            if (existing.ReplacedByTokenHash is not null)
+            {
+                await RevokeAllSessionsAsync(existing.UserAccountId, cancellationToken);
+            }
+
+            return InvalidRefreshToken();
+        }
+
+        if (existing.ExpiresAtUtc <= now || !existing.UserAccount.IsActive)
         {
             return InvalidRefreshToken();
         }
@@ -321,6 +335,27 @@ public sealed class AuthenticationService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success(ToDto(account));
+    }
+
+    private async Task RevokeAllSessionsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var account = await dbContext.UserAccounts
+            .Include(user => user.RefreshTokens)
+            .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
+
+        if (account is null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        account.InvalidateSessions(now);
+        foreach (var token in account.RefreshTokens.Where(token => token.RevokedAtUtc is null))
+        {
+            token.Revoke(now);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<AuthenticationResponse> IssueSessionAsync(

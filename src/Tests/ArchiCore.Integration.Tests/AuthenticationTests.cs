@@ -90,9 +90,14 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
             new { refreshToken = firstSession.RefreshToken }, Ct);
         await AssertStatusAsync(HttpStatusCode.Unauthorized, replay);
 
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondSession.AccessToken);
+        using var staleAccess = await anonymous.GetAsync("/api/auth/me", Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, staleAccess);
+
+        anonymous.DefaultRequestHeaders.Authorization = null;
         using var nextRotation = await anonymous.PostAsJsonAsync("/api/auth/refresh",
             new { refreshToken = secondSession.RefreshToken }, Ct);
-        await AssertStatusAsync(HttpStatusCode.OK, nextRotation);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, nextRotation);
     }
 
     [Fact]
