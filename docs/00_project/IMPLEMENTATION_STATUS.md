@@ -73,7 +73,7 @@ The current backend/security/frontend work described below is on the active feat
 
 ## 3. Domain and requirements blockers
 
-Do not implement documentary persistence based on contradictory draft documents. These items require a documented decision or an approved specification:
+Do not implement documentary persistence based on contradictory draft documents. These items require a documented decision or an approved specification. The decision log [DOMAIN_DECISIONS_TO_APPROVE.md](../03_domain/DOMAIN_DECISIONS_TO_APPROVE.md) records the conflict, a proposed default for discussion, owner/approval and implementation impact. Proposals in that file are **not approved requirements**:
 
 1. **Archive / Folder / Box boundaries:** `DOMAIN_REVIEW.md` and the draft aggregate specifications disagree about which are aggregate roots and which are internal entities.
 2. **Box-to-location relationship:** `Warehouse.md` describes an internal `WarehouseLocation`, but its fields and movement rules are not formalized.
