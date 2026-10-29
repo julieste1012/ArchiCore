@@ -64,7 +64,7 @@ export function ChangePasswordForm({ onComplete, compact = false }: ChangePasswo
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {completed ? (
         <>
-          <SuccessMessage><ShieldCheck size={16} /> Tu contraseña cambió correctamente y se revocaron las sesiones anteriores.</SuccessMessage>
+          <SuccessMessage>Tu contraseña cambió correctamente y se revocaron las sesiones anteriores.</SuccessMessage>
           <p className="form-hint">Por seguridad, cierra esta sesión e ingresa de nuevo con tu nueva contraseña.</p>
           <button type="button" className="primary-button" onClick={onComplete}>Cerrar sesión y volver a ingresar</button>
         </>
