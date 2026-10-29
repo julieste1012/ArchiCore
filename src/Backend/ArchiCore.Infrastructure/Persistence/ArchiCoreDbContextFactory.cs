@@ -9,7 +9,7 @@ public sealed class ArchiCoreDbContextFactory : IDesignTimeDbContextFactory<Arch
     {
         var connectionString =
             Environment.GetEnvironmentVariable("ConnectionStrings__ArchiCoreDb")
-            ?? "Host=localhost;Port=5432;Database=archicore;Username=archicore;Password=archicore_dev";
+            ?? "Host=127.0.0.1;Port=5433;Database=archicore;Username=archicore;Password=archicore_dev";
 
         var options = new DbContextOptionsBuilder<ArchiCoreDbContext>()
             .UseNpgsql(connectionString)

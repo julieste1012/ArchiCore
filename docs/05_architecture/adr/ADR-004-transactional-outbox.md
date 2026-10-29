@@ -1,38 +1,40 @@
-# ADR-004: Transactional Outbox for Domain Events
+# ADR-004: Transactional Outbox and Domain-Event Audit Projection
 
 | Field | Value |
 |---|---|
-| Status | Accepted for the current backend foundation |
-| Date | 2026-10-28 |
-| Scope | EF Core persistence for existing domain events |
+| Status | Accepted and implemented on `feat/backend-core-api` |
+| Date | 2026-10-28 (updated 2026-10-29) |
+| Scope | EF Core domain-event capture, processing and audit projection |
 
 ## Context
 
-Domain aggregates already collect `IDomainEvent` instances in `Entity.DomainEvents`. EF mappings deliberately ignore that in-memory collection, and no dispatcher currently processes events. Dispatching only in memory would leave a crash window in which an aggregate update is committed but its event is lost.
+Domain aggregates collect `IDomainEvent` instances in `Entity.DomainEvents`. Dispatching only in memory leaves a crash window in which an aggregate update is committed but its event is lost. The core API also needs a durable history of domain events.
 
 ## Decision
 
-- When `ArchiCoreDbContext.SaveChanges` or `SaveChangesAsync` runs, collect events from tracked domain entities and add corresponding `OutboxMessages` before EF Core saves changes.
-- Save aggregate changes and outbox rows in the same relational transaction.
-- Use the domain event ID as the outbox primary key so one event ID cannot produce multiple persisted rows.
-- Store the event's full type name, UTC occurrence time, enqueue time and JSONB payload.
-- Clear domain events from aggregates only after `SaveChanges` succeeds. If saving throws, the aggregate retains its pending events.
-- Use the `AddTransactionalOutbox` migration to create the outbox table and a filtered index for unprocessed records.
+- `ArchiCoreDbContext.SaveChanges/SaveChangesAsync` collects events from tracked entities and adds `OutboxMessages` before EF Core saves changes.
+- Aggregate updates and outbox rows are saved in the same relational transaction.
+- The event ID is the outbox primary key. The outbox stores the fully qualified event type, UTC occurrence/enqueue times and JSONB payload.
+- In-memory domain events are cleared only after a successful save.
+- A hosted worker runs outside the Testing environment. It polls pending records and uses PostgreSQL `FOR UPDATE SKIP LOCKED` to coordinate multiple API instances.
+- For each batch, the processor writes an immutable `DomainEventAuditEntries` projection and marks the outbox rows processed in the same database transaction. A failed batch rolls back and remains pending for a later poll.
+- `GET /api/audit/domain-events` exposes a paginated, filterable view of the audit projection to the SystemAdministrator role only.
 
-## Consequences
+## Consequences and limits
 
-- Aggregate state and its event record are committed atomically for the current EF Core/PostgreSQL unit of work.
-- The outbox provides durable event capture only. It is not an audit log and it does not yet dispatch events to handlers, external systems or an audit processor.
-- Until a dispatcher and cleanup policy are implemented, unprocessed rows remain in the table.
-- Future dispatch must use an allow-listed event-type registry rather than arbitrary type activation, be idempotent, and mark a message processed only after handling succeeds.
-- Retry, poison-message handling, delivery metrics and retention remain follow-up work.
+- The aggregate state and its outbox event are atomically persisted.
+- The audit projection is idempotent by event ID; the same ID cannot create multiple audit entries.
+- A failed processor batch is retried on a later poll. There is not yet a retry counter, poison-message quarantine, retention/cleanup policy, delivery metrics or alerting.
+- This is a domain-event audit, not a complete actor-level audit. Current domain events do not consistently carry actor/user/request context, and authentication events are not written to a separate security-audit stream.
+- Audit payloads preserve event JSON. Before production, approve PII visibility, retention and redaction policies. The audit endpoint is currently restricted to administrators.
+- External event delivery/handlers are still future work; no arbitrary .NET type activation is used by this generic audit processor.
 
 ## Verification
 
-The integration suite applies the real migration to a disposable PostgreSQL 17 Testcontainers instance and checks that a customer-creation event is persisted, and that a successful second save does not duplicate the event.
+The integration suite runs against a disposable PostgreSQL 17 Testcontainers database and verifies event persistence, event clearing after successful saves, rollback on failed aggregate writes, outbox processing, audit projection, processed-state marking, idempotent reprocessing and administrator-only API access.
 
 ## Alternatives considered
 
-- **In-memory-only dispatch:** rejected because a process crash can lose events after aggregate persistence.
-- **Dispatch before persistence:** rejected because external side effects can occur even if the database transaction fails.
-- **Treat the outbox as an audit trail:** rejected because delivery/processing state and a durable business audit record have different purposes and retention semantics.
+- **In-memory-only dispatch:** rejected because a crash can lose events after the aggregate is persisted.
+- **Dispatch before persistence:** rejected because side effects can occur if the database transaction fails.
+- **Treat the outbox itself as the audit log:** rejected because pending/processed delivery state is not a replacement for an immutable audit projection.

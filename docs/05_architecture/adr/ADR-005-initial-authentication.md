@@ -2,37 +2,33 @@
 
 | Field | Value |
 |---|---|
-| Status | Accepted for the backend foundation |
+| Status | Accepted and implemented on `feat/backend-core-api`, with production hardening pending |
 | Date | 2026-10-29 |
 | Scope | API access tokens, refresh sessions and technical account persistence |
 
 ## Context
 
-The core API exposes customer, contract, project and warehouse operations. The project has approved business-role definitions, but the final permission matrix and the domain boundaries for the full User aggregate remain unresolved. Anonymous access to operational endpoints is not acceptable.
+Core customer, contract, project and warehouse endpoints need an authentication boundary. The business-role document is approved but defines organizational responsibilities, not endpoint-by-endpoint software permissions. The full business-domain User aggregate also remains under review.
 
 ## Decision
 
-- Introduce a minimal infrastructure authentication account model for credentials and sessions. It is not a replacement for the future business-domain User aggregate; that aggregate must be reconciled against the domain model before broader personnel workflows are implemented.
-- Persist email (normalized and unique), display name, password hash, one approved business-role name, activation state, timestamps, failed-login counter and temporary lockout.
-- Use ASP.NET Core's password hasher rather than storing or comparing raw passwords. Enforce a strong minimum password policy on account creation and bootstrap.
-- Issue signed short-lived JWT access tokens and random refresh tokens. Persist only SHA-256 hashes of refresh tokens. Rotate refresh tokens on every successful refresh and revoke them on logout.
-- Apply a five-failure temporary lockout to reduce online password guessing; authentication failure responses must not disclose whether an email exists.
-- Disable public self-registration. Account creation is restricted to an authenticated System Administrator. Bootstrap the first administrator only when explicit environment configuration is supplied.
-- Read JWT signing material and bootstrap credentials from environment/user-secrets, never commit secrets to appsettings.
-- Until a permission matrix derived from the approved responsibilities is documented, core operational controllers require the SystemAdministrator role. Do not infer the final permissions for the other business roles from their job descriptions.
-
-## Database changes
-
-Add `UserAccounts` and `RefreshTokens` via a versioned EF Core migration. Account email and refresh-token hashes are unique. Refresh tokens store expiry, revoke and replacement metadata so sessions can be audited and replay rejected.
+- Use a separate technical account model (`UserAccounts`) and refresh-token table. Do not treat it as the final personnel/User domain aggregate.
+- Normalize and uniquely index email; store a password hash using ASP.NET Core's password hasher; never store raw passwords.
+- Issue short-lived HMAC-SHA256 JWT access tokens and random refresh tokens. Store only SHA-256 hashes of refresh tokens.
+- Rotate refresh tokens on successful refresh and revoke them on logout. A reused/revoked/expired token is rejected.
+- Temporarily lock an account for 15 minutes after five failed password attempts. Missing-user and wrong-password responses are generic.
+- Disable public self-registration. Create users through an endpoint protected by the SystemAdministrator role. Bootstrap the first administrator only when the operator sets explicit environment configuration.
+- Read signing key and bootstrap credentials from environment variables or .NET user-secrets, never committed appsettings secrets.
+- Until a role permission matrix is approved, all existing operational controllers and the audit endpoint require SystemAdministrator. Other role names come from `docs/02_business/02_BusinessRoles.md` but are not granted speculative endpoint access.
 
 ## Consequences and limits
 
-- This delivers a secure initial authentication boundary, not a final personnel/identity module.
-- Role names come from `docs/02_business/02_BusinessRoles.md`; permissions for each business module remain a documented follow-up decision.
-- MFA, password reset, email verification, breached-password checks, refresh-token replay response beyond rejecting the used token, audit processing and distributed rate limiting remain future work.
-- The initial lockout is database-backed but not a replacement for gateway/API rate limiting.
-- The transactional outbox remains responsible only for event capture; authentication activity still needs the separate audit trail.
+- The initial login/session boundary is implemented and tested, but is not yet the full identity/personnel module.
+- MFA, email verification, password reset/recovery, user deactivation/re-activation endpoints, refresh-session administration, distributed rate limiting and a complete security-event audit stream remain future work.
+- Logout revokes the refresh token; already issued access tokens can remain valid until their short expiry.
+- The frontend currently keeps tokens in memory and requires a new login after a reload. Production should adopt a reviewed browser-session pattern; do not persist bearer/refresh tokens in localStorage as a shortcut.
+- The development bootstrap setup is for local use only and must not be used with shared or production credentials.
 
 ## Verification
 
-Integration tests must cover bootstrap behavior, login success/failure, lockout, JWT-protected endpoints, user-creation authorization, refresh rotation/replay rejection, logout/revocation and persistence in disposable PostgreSQL.
+The integration suite covers login, current-user access, generic authentication failures, failed-login lockout, refresh-token rotation/replay rejection, logout/revocation, anonymous rejection on protected routes and administrator-only user creation/operational access. The latest confirmed green backend run on the active feature line passes 78 tests; the newest audit-query/API validation update is undergoing a separate full CI run.

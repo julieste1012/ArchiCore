@@ -3,103 +3,97 @@
 | Field | Value |
 |---|---|
 | Project | ArchiCore ERP |
-| Last audit | 2026-10-28 |
-| Baseline reviewed | `d86b56aefadc374a1a657e38211fc2d2f4252dd9` |
-| Integration branch | `develop` |
-| Current phase | Core API/persistence, transactional outbox and automated integration coverage validated; security and documentary-domain decisions pending |
-| Next critical work | Define user/role security rules, add an idempotent outbox dispatcher and durable audit trail, then implement approved documentary workflows |
+| Last audit | 2026-10-29 |
+| Stable branch | `main` |
+| Integration target | `develop` |
+| Active implementation branch | `feat/backend-core-api` (PR #7, not yet merged) |
+| Current phase | Core API, PostgreSQL persistence, JWT authentication, transactional outbox/audit projection and the initial React frontend are implemented |
+| Next critical work | Complete CI review on the active head; add object storage and approved documentary workflows without inventing unresolved business rules |
 
-> This document records observed repository state. A successful build does not mean that the ERP backend is functionally complete. Update this file after each significant phase.
+> A passing test suite validates the implemented slice, not the completeness of the ERP. This document distinguishes completed infrastructure from business workflows that still lack approved specifications.
 
 ## 1. Changes already integrated into `develop`
 
-- **Repository hygiene:** root `.gitignore` added and tracked .NET `bin/` and `obj/` build output removed. See [PR #1](https://github.com/julieste1012/ArchiCore/pull/1).
-- **Project status:** this file was introduced via [PR #2](https://github.com/julieste1012/ArchiCore/pull/2).
-- **Domain test baseline and CI:** xUnit v3 test project and GitHub Actions workflow integrated via [PR #3](https://github.com/julieste1012/ArchiCore/pull/3).
-- **OpenAPI security update:** `Microsoft.AspNetCore.OpenApi` upgraded from `10.0.9` to `10.0.14` via [PR #4](https://github.com/julieste1012/ArchiCore/pull/4). The successful restore/build/test log no longer reports NU1903 for `Microsoft.OpenApi`.
-- **Automated validation:** GitHub Actions restore/build/test succeeded, with 37 domain unit tests passing. See [CI run for security update](https://github.com/julieste1012/ArchiCore/actions/runs/40450759606).
+- **Repository hygiene:** root `.gitignore` and removal of tracked .NET build output via [PR #1](https://github.com/julieste1012/ArchiCore/pull/1).
+- **Implementation status:** introduced via [PR #2](https://github.com/julieste1012/ArchiCore/pull/2).
+- **Domain regression tests and CI:** integrated via [PR #3](https://github.com/julieste1012/ArchiCore/pull/3).
+- **OpenAPI package security update:** `Microsoft.AspNetCore.OpenApi` upgraded to `10.0.14` via [PR #4](https://github.com/julieste1012/ArchiCore/pull/4).
+- **Runtime standardization:** .NET 10 LTS recorded in ADR-003 through [PR #6](https://github.com/julieste1012/ArchiCore/pull/6).
 
-These changes are on `develop`; `main` remains the stable branch and must not be assumed to contain them yet.
+The current backend/security/frontend work described below is on the active feature branch until PR #7 is reviewed and merged. Do not assume that `main` or `develop` already contains it.
 
-## 2. Current repository state
+## 2. Current repository state on `feat/backend-core-api`
 
-### Solution and runtime
-- Solution: `src/ArchiCore.slnx`.
-- Backend projects: `ArchiCore.Domain`, `ArchiCore.Application`, `ArchiCore.Infrastructure`, `ArchiCore.Shared`, and `ArchiCore.API`.
-- Test projects: `ArchiCore.Domain.Tests` and `ArchiCore.Integration.Tests`.
-- All projects target .NET 10 (`net10.0`).
-- Tests use Microsoft Testing Platform with xUnit v3, consistent with `global.json`.
-- Local development uses PostgreSQL 17 through Docker Compose. The Compose host binding is `127.0.0.1:5433 -> container 5432` to avoid conflicts with a Windows-host PostgreSQL service. This setting is development-only.
+### Core API and persistence
+- Solution: `src/ArchiCore.slnx`; backend targets .NET 10 (`net10.0`).
+- REST endpoints and application services for Customer, Contract, Project and Warehouse, including list pagination, creation, retrieval and the lifecycle operations already defined in the current domain code.
+- EF Core 10/Npgsql mappings, PostgreSQL 17 development Compose service, versioned migrations, repository implementations and `/health/live` / `/health/ready`.
+- API validation errors are returned as HTTP 422 with `Api.ValidationFailed`; explicit domain error codes map to 404/409/401 as appropriate.
+- Local Compose binds PostgreSQL to `127.0.0.1:5433` to avoid collision with a host PostgreSQL service listening on 5432.
 
-### Implemented and manually validated
-- Domain primitives, value objects, and the current Customer, Contract, Project, Warehouse and Box domain model.
-- Core application services, DTOs and repositories for Customer, Contract, Project and Warehouse.
-- PostgreSQL persistence via EF Core 10/Npgsql, mappings and the `InitialCoreSchema` migration.
-- REST controllers for customers, contracts, projects and warehouses; pagination, selected lifecycle operations and `/health/live` / `/health/ready`.
-- Manual end-to-end verification against the local PostgreSQL container: customer and warehouse creation/read-back; customer-contract association; contract-project association; warehouse assignment to a project and read-back of its active assignment.
+### Authentication and authorization
+- `UserAccounts` and `RefreshTokens` persistence.
+- Password hashing through ASP.NET Core's password hasher; password minimum policy; generic login failure responses; temporary 15-minute lockout after five failed attempts.
+- Short-lived HMAC-SHA256 JWT access tokens; only SHA-256 hashes of refresh tokens are stored. Refresh tokens rotate on use and are revoked on logout; reused tokens are rejected.
+- Bootstrap administrator creation is opt-in via environment configuration. No application signing key or bootstrap password is committed to source control.
+- All four current operational controllers and the audit endpoint currently require the `SystemAdministrator` role because the approved business-role document defines responsibilities but no final endpoint permission matrix.
+- This is a technical authentication boundary, not yet the full personnel/User domain module. MFA, password reset, security-event auditing and distributed rate limiting remain future work.
 
-### Automated tests and CI evidence
-- Domain/test project: 38 tests pass, including the EF model test that generates PostgreSQL DDL without connecting to a database.
-- Integration-test project: 29 tests use `WebApplicationFactory<Program>` and a disposable PostgreSQL 17 Alpine container through Testcontainers. They apply real EF migrations to an isolated temporary database and do not use the local Docker Compose volume.
-- Integration coverage: live/readiness health endpoints; customer/warehouse create, read and list; duplicate rejection; 404/409/422 error responses; customer-contract and contract-project references in both directions; active warehouse assignment persistence; tested lifecycle paths for Customer, Contract, Project and Warehouse; outbox persistence, event clearing after successful saves and transaction rollback when an aggregate save fails; migration application; connection-string isolation; identifier uniqueness; and concurrent independent flows.
-- CI evidence: [GitHub Actions run for commit `0e4ec80`](https://github.com/julieste1012/ArchiCore/actions/runs/40788879167) completed successfully. Restore and Release build succeeded; test summary: 67 passed, 0 failed, 0 skipped (38 domain/model + 29 integration).
-- The suite validates the implemented core slice only. It does not establish that the full ERP backend or all business workflows are complete.
+### Transactional outbox and domain-event audit
+- `ArchiCoreDbContext.SaveChanges/SaveChangesAsync` persists domain events to `OutboxMessages` in the same transaction as aggregate updates, and clears the in-memory events only after successful saving.
+- A hosted worker processes pending rows outside the Testing environment. PostgreSQL `FOR UPDATE SKIP LOCKED` coordinates multiple instances. Audit projection and marking the outbox row processed commit in the same transaction; failed batches remain pending and are retried on a later poll.
+- `DomainEventAuditEntries` stores an immutable payload copy. `GET /api/audit/domain-events` is administrator-only and supports event-type/date filters and pagination.
+- This is durable *domain-event* auditing. It is not yet a complete actor-level security audit: events do not consistently include the authenticated actor, and user login/refresh/logout actions are not recorded in a separate security-audit stream. There is no retry counter, poison-message quarantine or retention/cleanup policy yet.
 
-### Known limits of the core API slice
-- The API maps known domain error codes explicitly to HTTP 404/409; other domain validation failures return 422. New domain error codes must be added to the mapping intentionally.
-- Request validation is primarily domain Value Object validation and query-parameter ranges; there is no general application validation pipeline yet.
-- Customer currently stores NIT, status and contract references only. Required organization/profile/contact fields remain open in `CustomerSpecification.md`.
-- `ContractStatus` includes `Cancelled`, but the domain has no `Cancel()` transition.
-- Box currently exists in the domain only: it has no EF mapping, application service or API endpoint.
-- Domain events are now stored transactionally in `OutboxMessages` as JSONB and cleared from aggregates only after successful `SaveChanges`. There is not yet a dispatcher, retry/retention policy, or durable audit-trail processor. Unprocessed outbox rows will accumulate until that work is implemented.
+### Initial frontend
+- First slice lives in `src/Frontend/archicore-web`: React, TypeScript and Vite with login, dashboard and pages to list/create customers, contracts, projects and warehouses.
+- UI requests go to the existing API; it is not a disconnected mockup. Dashboard counts are queried from the API.
+- Session tokens remain in browser memory. A full page reload requires a new login. Do not replace this with localStorage token persistence as a shortcut; production browser-session design still needs a reviewed HttpOnly-cookie/CSRF strategy.
+- Frontend CI typechecks and produces a production build. Documentary modules, permission-aware role-specific UI, editing/deletion and end-to-end release validation remain pending.
 
-### Not yet implemented / pending
-- User identity and authentication: password handling, JWT access tokens, refresh-token lifecycle, revocation, roles and authorization policies.
-- Outbox dispatch/consumer pipeline, retry and poison-message policy, retention/cleanup, and persistent audit trail. The current outbox only guarantees durable transactional event capture.
-- File-storage abstraction and MinIO integration.
-- Documentary modules (Archive, Folder, Box persistence/API, Document and Folio), blocked by the unresolved domain decisions in section 3.
-- Business processes BP-001 to BP-014: the current API slice is not their implementation.
-- General application-level validation pipeline and a versioned/documented API contract suitable for release.
-- Deployment hardening, production secret handling, backup and restore verification beyond local Compose.
-- Frontend application (intentionally deferred until the backend contracts and workflows are ready).
+### Automated validation
+- Domain/model test project: 38 tests.
+- Integration suite uses `WebApplicationFactory<Program>` and an isolated PostgreSQL 17 Testcontainers instance; its actual migration path is applied to the temporary database.
+- Latest confirmed green backend CI before this documentation-only/configuration update: [78 tests passed, 0 failed, 0 skipped](https://github.com/julieste1012/ArchiCore/actions/runs/40965570439) (38 domain/model + 40 integration). The newer audit endpoint commit must also remain green before the PR is merged.
+- Frontend production build has passed in GitHub Actions on the same feature line: [Frontend CI](https://github.com/julieste1012/ArchiCore/actions/runs/40965570536).
 
 ## 3. Domain and requirements blockers
 
-Do not create persistence mappings or additional aggregate classes based on contradictory documents. The following require a documented decision or an approved specification:
+Do not implement documentary persistence based on contradictory draft documents. These items require a documented decision or an approved specification:
 
-1. **Archive / Folder / Box boundaries.** `DOMAIN_REVIEW.md` says Archive requires refinement and lists Folder, Box, Document and Folio as entities. `Archive.md` calls Archive an aggregate root containing the documentary hierarchy. `Folder.md` and `Box.md` are draft specifications that conflict over whether Folder and Box are aggregate roots or internal entities.
-2. **Box-to-location relationship.** `Warehouse.md` v2.0 says physical `WarehouseLocation` is an internal entity of Warehouse and Box should reference a location by identity; location fields and movement rules are not formalized.
-3. **Domain ownership map.** `01_DomainModel.md`, `DomainMap.md`, `DOMAIN_REVIEW.md` and `MasterDevelopmentPlan.md` differ on the aggregate-root list (including User, Loan and Archive).
-4. **Contract/project cardinality.** `03_OrganizationalStructure.md` says each contract generates one operational project, while the Contract specification and ubiquitous language allow multiple projects per contract.
-5. **Contract cancellation and event catalog.** `ContractStatus` includes Cancelled, but no `Cancel()` transition is implemented; documents also disagree on ContractClosed/ContractFinished and related events.
-6. **Customer profile.** Current `Customer` stores NIT and status only. `CustomerSpecification.md` explicitly leaves name/business identity/contact fields open; do not invent required fields silently.
-7. **Incomplete status/event transitions.** Box has status values whose transitions are not reachable through current public methods; Warehouse maintenance/archive transitions do not all emit catalogued events.
-8. **Business-process coverage.** `05_BusinessProcesses.md` marks BP-001 and BP-002 completed in documentation, but no application/use-case/API implementation was found for these workflows. BP-003 to BP-014 are still pending in the process index.
-9. **Technology documentation.** Resolved by ADR-003: the solution targets .NET 10 LTS (`net10.0`), and the Master Blueprint now reflects ASP.NET Core 10. Keep patch-level dependencies aligned with the .NET 10 release train.
+1. **Archive / Folder / Box boundaries:** `DOMAIN_REVIEW.md` and the draft aggregate specifications disagree about which are aggregate roots and which are internal entities.
+2. **Box-to-location relationship:** `Warehouse.md` describes an internal `WarehouseLocation`, but its fields and movement rules are not formalized.
+3. **Domain ownership map:** domain documents differ on the aggregate-root list, including User, Loan and Archive.
+4. **Contract/project cardinality:** `03_OrganizationalStructure.md` says one project per contract while the contract specification permits multiple projects.
+5. **Contract cancellation/event catalog:** `ContractStatus` contains Cancelled, but no `Cancel()` transition exists and event names differ between documents.
+6. **Customer profile:** Customer currently stores NIT/status/contract references. The business specification leaves legal name, identity and contact fields open.
+7. **Lifecycle gaps:** some Box/Warehouse states and catalogued events are not fully reachable or emitted by current domain methods.
+8. **Business processes:** BP-001 and BP-002 are written as initial workflows, but their operational API/use-case coverage is not complete; BP-003 to BP-014 remain pending in the index.
+9. **Security and audit requirements:** the technical login and domain-event audit are implemented, but the final per-role permission matrix, actor-level audit requirements, retention and incident-response policy are not approved.
+10. **Object storage:** MinIO integration and the approved file/document metadata workflow remain pending.
 
-The project AI Collaboration Protocol prohibits inventing business rules. Record decisions in the documentation first, then implement them.
+The project collaboration protocol prohibits silently inventing business rules. Resolve these decisions before adding the Archive/Folder/Box/Document/Folio and Loan models.
 
 ## 4. Next implementation sequence
 
-1. **Domain decision record:** reconcile aggregate-root/entity ownership, contract/project cardinality, WarehouseLocation, lifecycle transitions and domain-event inconsistencies before implementing documentary persistence.
-2. **Close the approved domain model:** implement only documented decisions and strengthen tests for invariants and permitted/forbidden transitions.
-3. **Application/API hardening:** add an application validation pipeline and publish a stable, versioned API contract for the core modules.
-4. **Outbox processing and audit:** implement an allow-listed event dispatcher, idempotent handling, retries, poison-message strategy, retention and durable audit entries. The transactional outbox already captures events, but it does not deliver them.
-5. **Security:** formalize the user identity/role model from requirements, then implement password handling, JWT, refresh-token rotation/revocation, authorization policies and integration tests.
-6. **Documentary workflows:** after the decisions in section 3 are approved, implement archive/inventory, box/folder, location, search, loans/returns, digitization and billing in prioritized increments.
-7. **File storage:** implement the documented storage abstraction and MinIO integration, including authorization and audit behavior.
-8. **Integration/operational tests:** extend the passing PostgreSQL Testcontainers suite for validation, security, event dispatch and clean migration/start-up checks.
-9. **Release gate:** clean restore/build/test, no high-severity package advisory, migration/deployment smoke test, secure configuration, backup guidance and documented endpoints.
-10. **Frontend:** begin only after the approved API contracts and priority end-to-end workflows are verified.
+1. **Release gate for this slice:** confirm the latest backend and frontend CI runs for the current HEAD; review the diff before merging PR #7.
+2. **Local setup and smoke test:** apply all migrations to the local development database; create the bootstrap administrator using local environment variables; verify login and the four core modules in the browser.
+3. **Security hardening:** add explicit role/endpoint permission matrix from approved business responsibilities; add actor-level security audit; define rate limiting, credential recovery and token/session policy.
+4. **Operational audit:** define retries, poison-message handling, retention, cleanup and monitoring for the domain-event processor.
+5. **Object storage:** implement MinIO abstraction/configuration and object lifecycle once file metadata and authorization contracts are approved.
+6. **Domain decision record:** resolve aggregate boundaries, cardinality, WarehouseLocation, lifecycle transitions and event catalog.
+7. **Documentary workflows:** implement the approved reception/counting, classification, folder/box storage, search, loans/returns, digitization, billing and contract-closure flows with integration tests.
+8. **Frontend:** complete module forms, role-aware interactions and error/loading states against the agreed API; add frontend component/flow tests.
+9. **Deployment:** production secrets, container health, logging/metrics, backup/restore rehearsal and migration smoke test.
+10. **Completion gate:** backend is complete only after approved in-scope business processes have working secured endpoints, persistent data, audit semantics, file handling and end-to-end test coverage.
 
 ## 5. Definition of backend complete
 
-The backend is complete only when the approved in-scope workflows have server-side validation and working endpoints; data persists in PostgreSQL through versioned migrations; authentication and permissions protect applicable endpoints; file handling and audit behavior meet the documented requirements; domain/application logic and API/database flows are covered by automated tests; and a clean deployment starts reliably.
+The backend is complete only when the approved in-scope workflows have server-side validation and working endpoints; PostgreSQL migrations are reproducible; permissions protect each operation; document storage and audit meet approved requirements; domain/application/API/database behavior is covered by automated tests; and a clean deployment starts reliably with documented secrets and backup/restore operations.
 
 ## 6. Git and collaboration rules
 
-- `main` is the stable release branch; develop and test changes on `develop` or short-lived feature branches.
-- Keep one logical change per commit and open pull requests for review.
-- Every implementation task includes objective, scope, files, constraints, tests and acceptance criteria.
-- Update this file after significant changes, including commit/PR, test evidence and next task.
-- Architecture and business rules are documented before implementation. No silent assumptions.
+- `main` is the stable release branch; `develop` is the integration target; feature branches remain short-lived.
+- Keep one logical change per commit and review through pull requests.
+- Update this document after each significant implementation slice with the commit/PR and evidence.
+- Architecture and business rules must be recorded before implementation. No silent assumptions.

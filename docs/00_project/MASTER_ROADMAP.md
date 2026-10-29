@@ -1,93 +1,108 @@
 # ArchiCore ERP — Master Roadmap
 
-Last reviewed: 2026-10-26  
-Current integration branch: `develop`  
-Current phase: Backend foundation and domain hardening
+Last reviewed: 2026-10-29  
+Stable branch: `main`  
+Integration target: `develop`  
+Active implementation: `feat/backend-core-api` (PR #7, pending final review)  
+Current phase: Core API + security + domain-event audit + first frontend slice
 
-> This roadmap reflects the repository state verified in GitHub. The backend is not yet end-to-end functional. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for audit details and blockers.
+> This roadmap describes the active feature branch, not code already merged into `develop`. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for CI evidence, exact limits and domain blockers.
 
 ## Phase 0 — Foundation ✅
 - [x] Repository and solution structure
 - [x] Git/GitHub workflow established
-- [x] Root `.gitignore`; generated .NET build output removed from version control
+- [x] Root `.gitignore`; generated .NET build output removed from version control on develop
 - [x] Documentation foundation
-- [x] Backend CI workflow
+- [x] Backend CI workflow and .NET 10 LTS ADR
 
 ## Phase 1 — Business analysis ⚠️ In progress
 - [x] Ubiquitous language, organizational structure, business roles and service portfolio documented
 - [ ] Complete and approve all business processes (BP-003 through BP-014 remain pending in the process index)
 - [ ] Resolve contract/project cardinality discrepancy
-- [ ] Confirm requirements for customer identity/contact details and documentary metadata
-- [ ] Finalize audit, authentication and role/permission requirements
+- [ ] Confirm customer identity/contact details and documentary metadata
+- [ ] Approve endpoint permissions by business role
+- [ ] Finalize actor-level audit, retention and security requirements
 
 ## Phase 2 — Domain ⚠️ Partial implementation
 - [x] Domain base primitives and Result pattern
 - [x] Initial value objects
-- [x] Initial Customer, Contract, Project, Warehouse and Box classes and events
-- [x] Initial unit-test baseline (37 tests passing in GitHub Actions)
-- [ ] Resolve aggregate-root/entity boundaries: Archive, Folder, Box, Document, Folio, User and Loan
+- [x] Initial Customer, Contract, Project, Warehouse and Box classes/events
+- [x] Domain regression baseline
+- [ ] Resolve aggregate/entity boundaries: Archive, Folder, Box, Document, Folio, User and Loan
 - [ ] Formalize WarehouseLocation and Box location/movement model
 - [ ] Reconcile lifecycle transitions and event catalog
 - [ ] Complete domain invariants and negative-path tests
-- [ ] Implement remaining approved domain concepts (including User and Loan where approved)
+- [ ] Implement approved remaining domain concepts
 
-## Phase 3 — Application ⏳ Not started
-- [ ] Commands/use cases and queries
-- [ ] DTOs and request models
-- [ ] Validation
-- [ ] Repository/service interfaces
-- [ ] Domain-event handling and audit application flows
+## Phase 3 — Application ✅ Core modules implemented; broader workflows pending
+- [x] Core use cases/services and DTOs for Customer, Contract, Project and Warehouse
+- [x] Repository/service interfaces for current core modules
+- [x] Paged list queries and basic request validation
+- [x] Domain-event audit query service
+- [ ] General validation pipeline and application use cases for approved documentary workflows
+- [ ] Application-level use cases for security/administration audit
 
-## Phase 4 — Infrastructure ⏳ Not started
-- [ ] EF Core configuration and mappings
-- [ ] PostgreSQL and migrations
-- [ ] Repository implementations
-- [ ] Transaction and concurrency strategy
-- [ ] File-storage abstraction and MinIO integration
-- [ ] Persisted audit records
+## Phase 4 — Infrastructure ✅ Core persistence/security/audit; object storage pending
+- [x] EF Core configuration and PostgreSQL mappings for four core modules
+- [x] Versioned migrations for core schema, authentication and domain-event audit
+- [x] Repository implementations and transaction support
+- [x] JWT signing/validation, password hashing, refresh-token rotation/revocation and temporary lockout
+- [x] Transactional Outbox, row-lock coordinated worker and durable domain-event audit projection
+- [ ] MinIO storage abstraction, bucket lifecycle and object authorization
+- [ ] Actor-level security audit, outbox retention/poison-message handling and operational metrics
 
-## Phase 5 — API ⏳ Not started
-- [ ] Dependency injection and application wiring
-- [ ] Business endpoints/controllers
-- [ ] Standard validation/error responses
-- [ ] Authentication, JWT, refresh tokens and authorization policies
-- [ ] OpenAPI and health checks
-- [ ] API integration tests
+## Phase 5 — API ✅ Core endpoints/security implemented; permissions and workflows pending
+- [x] Dependency injection and API wiring
+- [x] Customer, Contract, Project and Warehouse endpoints
+- [x] Login, refresh, logout, current-user and administrator-only user creation endpoints
+- [x] Administrator-only paginated domain-event audit endpoint
+- [x] Standard validation/error responses and health endpoints
+- [x] Backend integration tests using PostgreSQL Testcontainers
+- [ ] Final per-role authorization policy matrix and credential-recovery endpoints
+- [ ] APIs for approved archive/folder/box/document/folio/loan workflows
+- [ ] OpenAPI contract review for all endpoint request/response models
 
-## Phase 6 — End-to-end business workflows ⏳ Not started
-- [ ] Documentary reception and counting
+## Phase 6 — End-to-end business workflows ⏳ Not complete
+- [ ] Documentary reception (BP-001) and counting (BP-002) end to end
 - [ ] Verification, classification and labeling
-- [ ] ERP registration and physical storage
+- [ ] ERP documentary registration and physical storage/location assignment
 - [ ] Search and retrieval
 - [ ] Documentary loans and returns
-- [ ] Digitization and billing support
-- [ ] Contract closure and documentary return
+- [ ] Digitization and file metadata
+- [ ] Billing support and contract closure/documentary return
 
-## Phase 7 — Testing and hardening ⚠️ Started
+## Phase 7 — Testing and hardening ✅ Started
 - [x] Domain unit-test baseline
 - [x] Automated restore/build/test on pull requests
-- [ ] Complete domain coverage
-- [ ] Application unit tests
-- [ ] PostgreSQL and API integration tests
+- [x] PostgreSQL/API integration suite and migration smoke coverage
+- [x] Authentication/refresh-token and role-boundary tests
+- [x] Domain-event outbox/audit transaction and API tests
+- [ ] Application unit tests for all use cases
 - [ ] Architecture/dependency-boundary tests
-- [ ] Resolve/document all remaining security and package advisories
+- [ ] Concurrency tests for simultaneous refresh-token redemption
+- [ ] Full security review, rate limiting and package-advisory recheck before release
 
-## Phase 8 — Containers and deployment ⏳ Not started
-- [ ] Dockerfiles and Compose
-- [ ] Backend + PostgreSQL + object storage
-- [ ] Safe configuration/secrets
-- [ ] Logs, monitoring, backup and restore validation
-- [ ] Production smoke test
+## Phase 8 — Containers and deployment ⚠️ Development only
+- [x] Local PostgreSQL Compose service and health check
+- [x] Local connection port avoids conflict with Windows PostgreSQL
+- [ ] API and frontend Dockerfiles/Compose
+- [ ] MinIO service and secure configuration
+- [ ] Production secret management, logging/metrics
+- [ ] Backup and restore validation; production smoke test
 
-## Phase 9 — Frontend ⏸️ Deferred by design
-- [ ] React + TypeScript foundation
-- [ ] Login and dashboard
-- [ ] Customer, contract, project, warehouse and documentary modules
-- [ ] API integration, error states and permission-aware UI
-- [ ] End-to-end validation against the completed backend
+## Phase 9 — Frontend 🚧 First slice implemented
+- [x] React + TypeScript + Vite foundation and frontend CI
+- [x] Login/session flow connected to `POST /api/auth/login`
+- [x] Dashboard metrics queried from API
+- [x] Customer, contract, project and warehouse list/create screens
+- [ ] Edit/details/lifecycle interactions and better module validation
+- [ ] Approved role-aware navigation/actions
+- [ ] Documentary modules, audit viewer polish and user-management screens
+- [ ] Frontend component tests and end-to-end workflows against a clean deployment
 
 ## Current completed maintenance work
 - [x] PR #1: repository hygiene merged into `develop`
 - [x] PR #2: implementation status document introduced and merged into `develop`
 - [x] PR #3: domain tests and CI merged into `develop`
 - [x] PR #4: OpenAPI dependency security update merged into `develop`
+- [ ] PR #7: core API, PostgreSQL, security, domain-event audit and first frontend slice (open; do not merge until final CI/diff review)
