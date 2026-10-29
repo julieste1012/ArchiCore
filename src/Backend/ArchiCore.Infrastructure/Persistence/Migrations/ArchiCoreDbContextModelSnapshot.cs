@@ -70,7 +70,6 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
                     b.HasIndex("NormalizedEmail").IsUnique().HasDatabaseName("IX_UserAccounts_NormalizedEmail");
                     b.ToTable("UserAccounts", (string)null);
-                    b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
@@ -392,6 +391,11 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                     b.Navigation("UserAccount");
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Security.UserAccount", b =>
+                {
+                    b.Navigation("RefreshTokens");
                 });
 
 #pragma warning restore 612, 618
