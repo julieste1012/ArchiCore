@@ -135,7 +135,23 @@ if (!builder.Environment.IsEnvironment("Testing") &&
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Automatic schema updates are opt-in and intentionally restricted to the local
+// container profile. Development machines and production deployments should use
+// an explicit migration/deployment step instead.
+if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+{
+    if (!app.Environment.IsEnvironment("Container"))
+    {
+        throw new InvalidOperationException(
+            "Database:ApplyMigrationsOnStartup is only supported by the local Container environment.");
+    }
+
+    await using var migrationScope = app.Services.CreateAsyncScope();
+    var dbContext = migrationScope.ServiceProvider.GetRequiredService<ArchiCoreDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Container"))
 {
     app.MapOpenApi();
 }
@@ -155,7 +171,12 @@ if (!string.IsNullOrWhiteSpace(bootstrapEmail))
     await seeder.EnsureAsync(bootstrapEmail, bootstrapPassword, bootstrapDisplayName);
 }
 
-app.UseHttpsRedirection();
+// The local container profile is behind a loopback-only HTTP reverse proxy;
+// host-based development continues to use HTTPS redirection.
+if (!app.Environment.IsEnvironment("Container"))
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

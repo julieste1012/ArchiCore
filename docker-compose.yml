@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: archicore
       POSTGRES_USER: archicore
-      POSTGRES_PASSWORD: archicore_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-archicore_dev}
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
@@ -17,9 +17,58 @@ services:
       timeout: 3s
       retries: 20
 
+  # Opt-in local full-stack profile. This is a development convenience, not a
+  # production deployment recipe; ports are bound to loopback and credentials are local-only.
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: src/Backend/ArchiCore.API/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Container
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ArchiCoreDb: "Host=postgres;Port=5432;Database=archicore;Username=archicore;Password=${POSTGRES_PASSWORD:-archicore_dev}"
+      Jwt__Issuer: ArchiCore
+      Jwt__Audience: ArchiCore.Client
+      Jwt__SigningKey: "${JWT_SIGNING_KEY:-QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFB}"
+      BootstrapAdmin__Email: "${BOOTSTRAP_ADMIN_EMAIL:-admin@archicore.local}"
+      BootstrapAdmin__DisplayName: "${BOOTSTRAP_ADMIN_DISPLAY_NAME:-Administrador ArchiCore}"
+      BootstrapAdmin__Password: "${BOOTSTRAP_ADMIN_PASSWORD:-ArchiCore_LocalAdmin_2026!}"
+      Database__ApplyMigrationsOnStartup: "true"
+      ObjectStorage__Provider: Local
+      ObjectStorage__LocalPath: /app/App_Data/Objects
+      Outbox__DispatchEnabled: "true"
+    ports:
+      - "127.0.0.1:7197:8080"
+    volumes:
+      - archicore-objects:/app/App_Data/Objects
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: src/Frontend/archicore-web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5173:80"
+
 volumes:
   archicore-postgres-data:
+  archicore-objects:
 
-# Local document bytes are stored by the filesystem provider by default. Do not run the
-# archived MinIO community server as a production dependency. A compatible endpoint can
-# be selected through ObjectStorage__Provider=Minio for evaluation/development.
+# The default object-storage provider is local filesystem storage. Do not use the
+# archived MinIO community server as a production dependency. The S3-compatible adapter
+# can be evaluated by selecting ObjectStorage__Provider=Minio with a supported service.
