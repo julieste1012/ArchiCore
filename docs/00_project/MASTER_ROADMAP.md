@@ -4,7 +4,7 @@ Last reviewed: 2026-10-29
 Stable branch: `main`  
 Integration target: `develop`  
 Active implementation: `feat/backend-core-api` (PR #7, pending final review)  
-Current phase: Core API + security + domain-event audit + first frontend slice
+Current phase: Core API + authentication/audit + operational frontend slice; documentary business workflows pending
 
 > This roadmap describes the active feature branch, not code already merged into `develop`. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for CI evidence, exact limits and domain blockers.
 
@@ -59,7 +59,8 @@ Current phase: Core API + security + domain-event audit + first frontend slice
 - [x] Administrator-only paginated domain-event audit endpoint
 - [x] Standard validation/error responses and health endpoints
 - [x] Backend integration tests using PostgreSQL Testcontainers
-- [ ] Final per-role authorization policy matrix and credential-recovery endpoints
+- [ ] Final per-role authorization policy matrix and credential recovery/reset flow
+- [x] Authenticated self-service password change with session revocation
 - [ ] APIs for approved archive/folder/box/document/folio/loan workflows
 - [ ] OpenAPI contract review for all endpoint request/response models
 
@@ -80,7 +81,7 @@ Current phase: Core API + security + domain-event audit + first frontend slice
 - [x] Domain-event outbox/audit transaction and API tests
 - [ ] Application unit tests for all use cases
 - [ ] Architecture/dependency-boundary tests
-- [ ] Concurrency tests for simultaneous refresh-token redemption
+- [x] Concurrency test for simultaneous refresh-token redemption
 - [ ] Full security review, rate limiting and package-advisory recheck before release
 
 ## Phase 8 — Containers and deployment ⚠️ Development only
@@ -97,9 +98,15 @@ Current phase: Core API + security + domain-event audit + first frontend slice
 - [x] Login/session flow connected to `POST /api/auth/login`
 - [x] Dashboard metrics queried from API
 - [x] Customer, contract, project and warehouse list/create screens
-- [ ] Edit/details/lifecycle interactions and better module validation
+- [x] Guarded lifecycle actions for existing customer/contract/project/warehouse transitions
+- [x] Project warehouse assignment/release UI with assignment history
+- [x] Contract finish action with an explicit finish date
+- [x] Administrator user management and domain-event audit viewer
+- [x] Self-service password change for authenticated users
+- [x] CI typecheck and production build
+- [ ] Edit/detail screens and broader form validation
 - [ ] Approved role-aware navigation/actions
-- [ ] Documentary modules, audit viewer polish and user-management screens
+- [ ] Documentary modules, actor-aware audit improvements and approved role-specific module views
 - [ ] Frontend component tests and end-to-end workflows against a clean deployment
 
 ## Current completed maintenance work
@@ -107,4 +114,4 @@ Current phase: Core API + security + domain-event audit + first frontend slice
 - [x] PR #2: implementation status document introduced and merged into `develop`
 - [x] PR #3: domain tests and CI merged into `develop`
 - [x] PR #4: OpenAPI dependency security update merged into `develop`
-- [ ] PR #7: core API, PostgreSQL, security, domain-event audit and first frontend slice (open; do not merge until final CI/diff review)
+- [ ] PR #7: core API, PostgreSQL, security, domain-event audit and first operational frontend slice (open; do not merge until final CI/diff review)

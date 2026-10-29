@@ -7,8 +7,8 @@
 | Stable branch | `main` |
 | Integration target | `develop` |
 | Active implementation branch | `feat/backend-core-api` (PR #7, not yet merged) |
-| Current phase | Core API, PostgreSQL persistence, JWT authentication, transactional outbox/audit projection, provider-neutral object storage and the initial React frontend are implemented |
-| Next critical work | Complete CI review; define approved document metadata and lifecycle; select a supported production S3-compatible service and implement the documentary workflows |
+| Current phase | Core API/security, transactional event audit, object-storage adapters and the first functional React operations slice are implemented and CI-validated |
+| Next critical work | Approve documentary domain boundaries and per-role permissions; then implement document metadata, physical locations and prioritized end-to-end business workflows |
 
 > A passing test suite validates the implemented slice, not the completeness of the ERP. This document distinguishes completed infrastructure from business workflows that still lack approved specifications.
 
@@ -32,12 +32,14 @@ The current backend/security/frontend work described below is on the active feat
 - Local Compose binds PostgreSQL to `127.0.0.1:5433` to avoid collision with a host PostgreSQL service listening on 5432.
 
 ### Authentication and authorization
-- `UserAccounts` and `RefreshTokens` persistence.
-- Password hashing through ASP.NET Core's password hasher; password minimum policy; generic login failure responses; temporary 15-minute lockout after five failed attempts.
-- Short-lived HMAC-SHA256 JWT access tokens; only SHA-256 hashes of refresh tokens are stored. Refresh tokens rotate on use and are revoked on logout; reused tokens are rejected.
-- Bootstrap administrator creation is opt-in via environment configuration. No application signing key or bootstrap password is committed to source control.
-- All four current operational controllers and the audit endpoint currently require the `SystemAdministrator` role because the approved business-role document defines responsibilities but no final endpoint permission matrix.
-- This is a technical authentication boundary, not yet the full personnel/User domain module. MFA, password reset, security-event auditing and distributed rate limiting remain future work.
+- `UserAccounts` and `RefreshTokens` persistence, separate from the not-yet-approved personnel/domain User aggregate.
+- Password hashing through ASP.NET Core's password hasher; minimum password policy; generic login failure responses; temporary 15-minute lockout after five failed attempts.
+- Short-lived HMAC-SHA256 JWT access tokens. Only SHA-256 hashes of refresh tokens are stored. Refresh tokens rotate on use, are revoked on logout, and replay is rejected. Concurrent refresh-token redemption is covered by an integration test; the frontend coordinates simultaneous refresh attempts into one in-flight rotation.
+- Authenticated self-service password change verifies the current password, enforces the password policy, requires the new value to differ, increments token version and revokes existing refresh sessions. Old access tokens are invalidated; the user must sign in again.
+- Administrator-only paginated user listing, account creation, account activation/deactivation, including token/session revocation. The last active SystemAdministrator cannot be deactivated, and an administrator cannot deactivate their own account.
+- Bootstrap administrator creation is opt-in via environment configuration. No signing key or bootstrap password is committed to source control.
+- All four current operational controllers and the audit endpoint require `SystemAdministrator` because the approved business-role document defines responsibilities but does not yet provide a final endpoint permission matrix. Non-admin users see a restricted frontend screen but can still change their own password.
+- This is a technical authentication boundary, not the full personnel/User domain module. MFA, password reset/recovery, login/security-event auditing, distributed rate limiting, and a final role/endpoint permission matrix remain future work.
 
 ### Object storage
 - Application exposes `IObjectStorage` for storing, streaming and deleting object bytes, with a shared object-key policy that blocks traversal paths and unsafe keys.
@@ -52,16 +54,22 @@ The current backend/security/frontend work described below is on the active feat
 - This is durable *domain-event* auditing. It is not yet a complete actor-level security audit: events do not consistently include the authenticated actor, and user login/refresh/logout actions are not recorded in a separate security-audit stream. There is no retry counter, poison-message quarantine or retention/cleanup policy yet.
 
 ### Initial frontend
-- First slice lives in `src/Frontend/archicore-web`: React, TypeScript and Vite with login, dashboard and pages to list/create customers, contracts, projects and warehouses.
-- UI requests go to the existing API; it is not a disconnected mockup. Dashboard counts are queried from the API.
-- Session tokens remain in browser memory. A full page reload requires a new login. Do not replace this with localStorage token persistence as a shortcut; production browser-session design still needs a reviewed HttpOnly-cookie/CSRF strategy.
-- Frontend CI typechecks and produces a production build. Documentary modules, permission-aware role-specific UI, editing/deletion and end-to-end release validation remain pending.
+- First slice lives in `src/Frontend/archicore-web`: React, TypeScript and Vite; login/session flow; API-backed dashboard; and list/create screens for customers, contracts, projects and warehouses.
+- The customer, contract, project and warehouse screens expose guarded lifecycle operations already implemented in the backend. They handle loading/error/success feedback and ask for confirmation before consequential transitions.
+- Project management supports assigning and releasing warehouses and displays assignment history. Counts show active assignments rather than historic rows.
+- Contract management can finish an active contract using an explicit date. The UI warns that recording `Finished` does not replace documentary return, pending-loan resolution, billing and archive closure.
+- SystemAdministrator can list/create/deactivate/reactivate accounts and view the paged domain-event audit with filters. All authenticated roles can change their own password; modules remain restricted to SystemAdministrator until the business permission matrix is approved.
+- API calls use the shared client, which handles access-token refresh with single-flight coordination. Session and tokens stay in browser memory; a full page reload requires a new login. Do not replace this with localStorage token persistence as a shortcut.
+- [API_REFERENCE.md](../06_development/API_REFERENCE.md) records current routes, request bodies, status codes, role constraints and explicit non-implemented areas.
+- Frontend CI typechecks and produces a production build. Component tests, end-to-end release validation, detail/edit screens and approved non-admin operational views remain pending.
 
 ### Automated validation
-- Domain/model test project: 38 tests.
-- Integration suite uses `WebApplicationFactory<Program>` and an isolated PostgreSQL 17 Testcontainers instance; its actual migration path is applied to the temporary database.
-- Latest confirmed green backend CI before this documentation-only/configuration update: [78 tests passed, 0 failed, 0 skipped](https://github.com/julieste1012/ArchiCore/actions/runs/40965570439) (38 domain/model + 40 integration). The newer audit endpoint commit must also remain green before the PR is merged.
-- Frontend production build has passed in GitHub Actions on the same feature line: [Frontend CI](https://github.com/julieste1012/ArchiCore/actions/runs/40965570536).
+- Domain/model test project: 38 tests, including the EF model test that generates PostgreSQL DDL.
+- Integration suite uses `WebApplicationFactory<Program>` and an isolated PostgreSQL 17 Testcontainers database. It applies the real migrations and does not use the developer's Docker Compose volume.
+- Coverage includes core API flows and associations; HTTP 404/409/422 error mapping; lifecycle transitions; object-storage safety and size checks; JWT authentication and role boundaries; refresh-token rotation/replay/concurrency; password change and token revocation; user administration; outbox persistence/rollback; audit projection; and database isolation.
+- Latest backend CI on the current code/documentation head: [96 passed, 0 failed, 0 skipped](https://github.com/julieste1012/ArchiCore/actions/runs/40969300019) (38 domain/model + 58 integration). Restore and Release build succeeded without warnings.
+- Latest frontend CI on the same head: [Typecheck and production build succeeded](https://github.com/julieste1012/ArchiCore/actions/runs/40969300022).
+- These results validate the implemented slice only. They do not establish that all business processes of the ERP have been implemented or approved.
 
 ## 3. Domain and requirements blockers
 
@@ -82,16 +90,15 @@ The project collaboration protocol prohibits silently inventing business rules. 
 
 ## 4. Next implementation sequence
 
-1. **Release gate for this slice:** confirm the latest backend and frontend CI runs for the current HEAD; review the diff before merging PR #7.
-2. **Local setup and smoke test:** apply all migrations to the local development database; create the bootstrap administrator using local environment variables; verify login and the four core modules in the browser.
-3. **Security hardening:** add explicit role/endpoint permission matrix from approved business responsibilities; add actor-level security audit; define rate limiting, credential recovery and token/session policy.
-4. **Operational audit:** define retries, poison-message handling, retention, cleanup and monitoring for the domain-event processor.
-5. **Object storage:** select a supported production S3-compatible service and validate its security/licensing posture; the application abstraction/adapters are in place, while file metadata and authorization contracts await approval.
-6. **Domain decision record:** resolve aggregate boundaries, cardinality, WarehouseLocation, lifecycle transitions and event catalog.
-7. **Documentary workflows:** implement the approved reception/counting, classification, folder/box storage, search, loans/returns, digitization, billing and contract-closure flows with integration tests.
-8. **Frontend:** complete module forms, role-aware interactions and error/loading states against the agreed API; add frontend component/flow tests.
-9. **Deployment:** production secrets, container health, logging/metrics, backup/restore rehearsal and migration smoke test.
-10. **Completion gate:** backend is complete only after approved in-scope business processes have working secured endpoints, persistent data, audit semantics, file handling and end-to-end test coverage.
+1. **Review/release the core slice:** verify current backend/frontend CI, review the diff and perform local browser/API smoke tests before merging PR #7.
+2. **Approve domain boundaries:** document decisions for Archive/Folder/Box/Document/Folio/Loan, WarehouseLocation, contract/project cardinality, lifecycle transitions and the Customer profile.
+3. **Approve authorization policy:** map the documented business roles to explicit read/write/actions for each endpoint. Keep current admin-only restriction until the matrix is approved and tested.
+4. **Finish security/audit policy:** add credential recovery/reset, actor-level security audit, rate limiting, outbox retry/poison-message policy, retention/cleanup, monitoring and deployment secrets guidance.
+5. **Documentary metadata and APIs:** after decisions are approved, design the metadata, object lifecycle, physical location and public upload/download contracts. Select a supported production S3-compatible provider and validate bucket/access policies.
+6. **Business workflows:** implement BP-001/BP-002 end-to-end and then approved verification/classification/labeling, search, loans/returns, digitization, billing and contract closure.
+7. **Frontend completion:** add details/edit flows, form validation polish, role-specific modules after approval, component tests and API-backed E2E tests.
+8. **Deployment:** API/frontend Dockerfiles, production secret configuration, logging/metrics, backups and restore rehearsal, and migration smoke test.
+9. **Completion gate:** backend is complete only when approved in-scope processes have secured endpoints, durable data, agreed audit/storage behavior and automated E2E coverage, and a clean deployment starts reliably.
 
 ## 5. Definition of backend complete
 
