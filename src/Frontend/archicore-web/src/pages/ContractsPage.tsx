@@ -28,6 +28,8 @@ export function ContractsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [transitioningId, setTransitioningId] = useState<string | null>(null);
+  const [finishingContractId, setFinishingContractId] = useState<string | null>(null);
+  const [finishDate, setFinishDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   async function load() {
     setBusy(true); setError('');
@@ -74,6 +76,38 @@ export function ContractsPage() {
     }
   }
 
+  async function finishContract(contract: Contract) {
+    if (!finishDate) {
+      setError('Selecciona la fecha de finalización.');
+      return;
+    }
+
+    const startDate = new Date(contract.startDate).toISOString().slice(0, 10);
+    if (finishDate < startDate) {
+      setError('La fecha de finalización no puede ser anterior a la fecha de inicio.');
+      return;
+    }
+
+    if (!window.confirm(`¿Registrar el fin del contrato ${contract.contractNumber} con fecha ${finishDate}? Esta operación cambia su estado a finalizado; no reemplaza los pasos de devolución documental y cierre operativo pendientes.`)) {
+      return;
+    }
+
+    setTransitioningId(contract.id);
+    setError('');
+    setSuccess('');
+    try {
+      const finishDateUtc = new Date(`${finishDate}T12:00:00`).toISOString();
+      await api.post<Contract>(`/contracts/${contract.id}/finish`, { finishDate: finishDateUtc });
+      setFinishingContractId(null);
+      setSuccess(`Contrato ${contract.contractNumber}: fecha de finalización registrada.`);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo finalizar el contrato.');
+    } finally {
+      setTransitioningId(null);
+    }
+  }
+
   const rows = (data?.items ?? []).filter((c) => !search || c.contractNumber.toLowerCase().includes(search.toLowerCase()));
   return (
     <>
@@ -92,7 +126,17 @@ export function ContractsPage() {
       </section>}
       <section className="content-card table-card"><div className="table-toolbar"><div><h2>Contratos registrados</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar número" aria-label="Buscar contrato" /></label></div>
         {busy ? <LoadingState label="Consultando contratos…" /> : rows.length === 0 ? <div className="empty-state"><FileCheck2 size={25} /><strong>No hay contratos que mostrar</strong><span>Registra un contrato asociado a un cliente.</span></div> :
-        <div className="table-scroll"><table><thead><tr><th>CONTRATO</th><th>CLIENTE</th><th>VALOR</th><th>ESTADO</th><th>INICIO</th><th>ACCIONES</th></tr></thead><tbody>{rows.map((c) => <tr key={c.id}><td><span className="table-avatar table-avatar-blue"><FileCheck2 size={17} /></span><span className="main-cell"><strong>{c.contractNumber}</strong><small>ID {c.id.slice(0, 8).toUpperCase()}</small></span></td><td>{customers.find((cl) => cl.id === c.clientId)?.nit ?? c.clientId.slice(0, 8)}</td><td><strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: c.currency, maximumFractionDigits: 0 }).format(c.totalValue)}</strong></td><td><StatusBadge status={c.status} /></td><td>{new Date(c.startDate).toLocaleDateString('es-CO')}</td><td><LifecycleActions status={c.status} actions={contractLifecycleActions} busy={transitioningId === c.id} onAction={(action) => void transition(c, action)} /></td></tr>)}</tbody></table></div>}
+        <div className="table-scroll"><table><thead><tr><th>CONTRATO</th><th>CLIENTE</th><th>VALOR</th><th>ESTADO</th><th>INICIO</th><th>ACCIONES</th></tr></thead><tbody>{rows.map((c) => <tr key={c.id}><td><span className="table-avatar table-avatar-blue"><FileCheck2 size={17} /></span><span className="main-cell"><strong>{c.contractNumber}</strong><small>ID {c.id.slice(0, 8).toUpperCase()}</small></span></td><td>{customers.find((cl) => cl.id === c.clientId)?.nit ?? c.clientId.slice(0, 8)}</td><td><strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: c.currency, maximumFractionDigits: 0 }).format(c.totalValue)}</strong></td><td><StatusBadge status={c.status} /></td><td>{new Date(c.startDate).toLocaleDateString('es-CO')}</td><td>
+          <div className="contract-row-actions">
+            <LifecycleActions status={c.status} actions={contractLifecycleActions} busy={transitioningId === c.id} onAction={(action) => void transition(c, action)} />
+            {c.status === 'Active' && <button type="button" className="table-action" disabled={transitioningId === c.id} onClick={() => { setFinishDate(new Date().toISOString().slice(0, 10)); setFinishingContractId((current) => current === c.id ? null : c.id); }}><FileCheck2 size={14} /> Finalizar</button>}
+          </div>
+          {finishingContractId === c.id && <form className="contract-finish-panel" onSubmit={(event) => { event.preventDefault(); void finishContract(c); }}>
+            <label htmlFor={`finish-date-${c.id}`}>Fecha de finalización</label>
+            <input id={`finish-date-${c.id}`} type="date" required min={new Date(c.startDate).toISOString().slice(0, 10)} value={finishDate} onChange={(event) => setFinishDate(event.target.value)} />
+            <div><button className="primary-button" type="submit" disabled={transitioningId === c.id}>{transitioningId === c.id ? 'Guardando…' : 'Confirmar'}</button><button type="button" className="secondary-button" onClick={() => setFinishingContractId(null)}>Cancelar</button></div>
+          </form>}
+        </td></tr>)}</tbody></table></div>}
       </section>
     </>
   );

@@ -249,6 +249,12 @@ td:first-child { min-width: 180px; }
 .assignment-form-field input,.assignment-form-field select { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #e0e8e2; border-radius: 8px; background: #fff; color: #304638; font-size: 11px; }
 .assignment-form-action { display: flex; }
 .assignment-form-action button { white-space: nowrap; }
+.contract-row-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 105px; }
+.contract-finish-panel { display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 190px; margin-top: 9px; padding: 12px; background: #f7faf7; border: 1px solid #e2ebe4; border-radius: 9px; }
+.contract-finish-panel label { color: #65776a; font-size: 10px; font-weight: 750; }
+.contract-finish-panel input { min-width: 0; padding: 8px; border: 1px solid #dfe8e1; border-radius: 7px; background: #fff; color: #304638; font-size: 11px; }
+.contract-finish-panel > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.contract-finish-panel button { padding: 7px 9px; font-size: 10px; }
 @media (max-width: 1100px) {
   .app-shell { grid-template-columns: 220px minmax(0,1fr); }
   .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -293,6 +299,7 @@ td:first-child { min-width: 180px; }
   .assignment-form { grid-template-columns: 1fr; }
   .assignment-form-action button { width: 100%; }
   .assignment-manager-heading { flex-direction: column; }
+  .contract-finish-panel { min-width: 0; }
   .app-footer { padding: 13px 16px; gap: 10px; flex-wrap: wrap; }
 }
 
