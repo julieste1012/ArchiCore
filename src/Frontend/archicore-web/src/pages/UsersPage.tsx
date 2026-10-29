@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { CheckCircle2, LockKeyhole, Plus, RefreshCw, Search, ShieldCheck, UserCog, UserRoundX, X } from 'lucide-react';
-import { api, ApiError } from '../api/client';
+import { api, ApiError, setSession } from '../api/client';
 import type { PagedResult, UserAccount } from '../api/types';
 import { ErrorMessage, LoadingState, SuccessMessage } from '../components/Feedback';
 import { ModuleHeader } from '../components/ModuleHeader';
@@ -34,6 +34,10 @@ export function UsersPage() {
   const [busy, setBusy] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
@@ -88,6 +92,32 @@ export function UsersPage() {
     }
   }
 
+  async function changeOwnPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!strongPassword(newPassword)) {
+      setError('La nueva contraseña debe tener al menos 12 caracteres, mayúscula, minúscula, número y símbolo.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('La confirmación no coincide con la nueva contraseña.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await api.post<void>('/auth/change-password', { currentPassword, newPassword });
+      window.alert('La contraseña cambió. Inicia sesión nuevamente con la nueva contraseña.');
+      setSession(null);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo cambiar la contraseña.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function toggleStatus(account: UserAccount) {
     const activating = !account.isActive;
     const action = activating ? 'activar' : 'desactivar';
@@ -118,11 +148,24 @@ export function UsersPage() {
         eyebrow="SEGURIDAD Y ACCESOS"
         title="Usuarios"
         description="Administra cuentas, roles empresariales y estado de acceso."
-        action={<><button className="secondary-button" onClick={() => void load(page)}><RefreshCw size={16} /> Actualizar</button><button className="primary-button" onClick={() => setShowCreate((value) => !value)}><Plus size={17} /> Nuevo usuario</button></>}
+        action={<><button className="secondary-button" onClick={() => setShowPasswordChange((value) => !value)}><LockKeyhole size={15} /> Mi contraseña</button><button className="secondary-button" onClick={() => void load(page)}><RefreshCw size={16} /> Actualizar</button><button className="primary-button" onClick={() => setShowCreate((value) => !value)}><Plus size={17} /> Nuevo usuario</button></>}
       />
       <div className="feedback feedback-success"><ShieldCheck size={17} /> La matriz de permisos por rol sigue pendiente de aprobación. Por ahora, los módulos operativos y la auditoría están restringidos a SystemAdministrator.</div>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {success && <SuccessMessage>{success}</SuccessMessage>}
+
+      {showPasswordChange && (
+        <section className="content-card create-card">
+          <div className="section-heading"><div><p className="eyebrow">SEGURIDAD DE CUENTA</p><h2>Cambiar mi contraseña</h2></div><button className="icon-button" aria-label="Cerrar formulario" onClick={() => setShowPasswordChange(false)}><X size={18} /></button></div>
+          <form className="form-grid" onSubmit={changeOwnPassword}>
+            <div><label htmlFor="current-password">Contraseña actual</label><input id="current-password" type="password" autoComplete="current-password" required maxLength={256} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></div>
+            <div><label htmlFor="new-password">Nueva contraseña</label><input id="new-password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></div>
+            <div><label htmlFor="confirm-password">Confirmar contraseña</label><input id="confirm-password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
+            <div className="form-actions"><button className="primary-button" type="submit" disabled={saving}>{saving ? 'Actualizando…' : 'Cambiar contraseña'}</button></div>
+          </form>
+          <p className="form-hint"><LockKeyhole size={13} /> Al cambiarla se revocan los refresh tokens y se invalidan los JWT anteriores. Tendrás que iniciar sesión de nuevo.</p>
+        </section>
+      )}
 
       {showCreate && (
         <section className="content-card create-card">

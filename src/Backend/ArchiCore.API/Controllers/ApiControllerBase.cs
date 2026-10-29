@@ -24,7 +24,8 @@ public abstract class ApiControllerBase : ControllerBase
     private static readonly HashSet<string> UnauthorizedErrorCodes = new(StringComparer.Ordinal)
     {
         "Authentication.InvalidCredentials",
-        "Authentication.InvalidRefreshToken"
+        "Authentication.InvalidRefreshToken",
+        "Authentication.InvalidCurrentPassword"
     };
 
     private static readonly HashSet<string> ConflictErrorCodes = new(StringComparer.Ordinal)

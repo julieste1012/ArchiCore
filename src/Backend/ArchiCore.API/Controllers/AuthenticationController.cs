@@ -49,6 +49,22 @@ public sealed class AuthenticationController(IAuthenticationService authenticati
         return result.IsFailure ? ToProblem(result.Error) : Ok(result.Value);
     }
 
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var subject = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (!Guid.TryParse(subject, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await authenticationService.ChangePasswordAsync(userId, request, cancellationToken);
+        return result.IsFailure ? ToProblem(result.Error) : NoContent();
+    }
+
     [HttpPost("users")]
     [Authorize(Roles = AppRoles.SystemAdministrator)]
     public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken)

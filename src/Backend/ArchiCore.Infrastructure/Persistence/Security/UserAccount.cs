@@ -75,6 +75,18 @@ public sealed class UserAccount
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    internal void ChangePasswordHash(string hash, DateTime nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(hash))
+        {
+            throw new ArgumentException("Password hash cannot be empty.", nameof(hash));
+        }
+
+        PasswordHash = hash;
+        TokenVersion++;
+        ResetFailedLoginState(nowUtc);
+    }
+
     internal void RecordFailedLogin(DateTime nowUtc)
     {
         FailedLoginAttempts++;

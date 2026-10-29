@@ -205,6 +205,88 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
     }
 
     [Fact]
+    public async Task Changing_password_revokes_old_access_and_refresh_tokens_and_allows_login_with_the_new_password()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var account = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
+        var session = await LoginAsync(anonymous, account.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var change = await anonymous.PostAsJsonAsync("/api/auth/change-password", new
+        {
+            currentPassword = StrongPassword,
+            newPassword = "Another_Strong_Password_2026!"
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.NoContent, change);
+
+        using var oldAccess = await anonymous.GetAsync("/api/auth/me", Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, oldAccess);
+
+        anonymous.DefaultRequestHeaders.Authorization = null;
+        using var oldRefresh = await anonymous.PostAsJsonAsync("/api/auth/refresh",
+            new { refreshToken = session.RefreshToken }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, oldRefresh);
+
+        using var oldLogin = await anonymous.PostAsJsonAsync("/api/auth/login",
+            new { email = account.Email, password = StrongPassword }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, oldLogin);
+
+        var newSession = await LoginAsync(anonymous, account.Email, "Another_Strong_Password_2026!");
+        Assert.False(string.IsNullOrWhiteSpace(newSession.AccessToken));
+    }
+
+    [Fact]
+    public async Task Changing_password_rejects_an_incorrect_current_password_without_revoking_the_session()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var account = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
+        var session = await LoginAsync(anonymous, account.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var response = await anonymous.PostAsJsonAsync("/api/auth/change-password", new
+        {
+            currentPassword = "Incorrect_Current_Password_2026!",
+            newPassword = "Another_Strong_Password_2026!"
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, response);
+        var problem = await ReadBodyAsync<ProblemResponse>(response);
+        Assert.Equal("Authentication.InvalidCurrentPassword", problem.Code);
+
+        using var me = await anonymous.GetAsync("/api/auth/me", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, me);
+
+        anonymous.DefaultRequestHeaders.Authorization = null;
+        var stillWorks = await LoginAsync(anonymous, account.Email, StrongPassword);
+        Assert.False(string.IsNullOrWhiteSpace(stillWorks.AccessToken));
+    }
+
+    [Fact]
+    public async Task Change_password_requires_authentication_and_rejects_reusing_the_current_password()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+
+        using var unauthenticated = await anonymous.PostAsJsonAsync("/api/auth/change-password", new
+        {
+            currentPassword = StrongPassword,
+            newPassword = "Another_Strong_Password_2026!"
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, unauthenticated);
+
+        var account = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
+        var session = await LoginAsync(anonymous, account.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var samePassword = await anonymous.PostAsJsonAsync("/api/auth/change-password", new
+        {
+            currentPassword = StrongPassword,
+            newPassword = StrongPassword
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.UnprocessableEntity, samePassword);
+        var problem = await ReadBodyAsync<ProblemResponse>(samePassword);
+        Assert.Equal("Authentication.NewPasswordMustDiffer", problem.Code);
+    }
+
+    [Fact]
     public async Task Administrator_can_list_users_and_the_response_is_paged()
     {
         var email = $"list-{Guid.NewGuid():N}@archicore.test";
@@ -301,10 +383,13 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
         return await ReadBodyAsync<UserAccountDto>(response);
     }
 
-    private static async Task<AuthenticationResponse> LoginAsync(HttpClient client, string email)
+    private static async Task<AuthenticationResponse> LoginAsync(
+        HttpClient client,
+        string email,
+        string password = StrongPassword)
     {
         using var response = await client.PostAsJsonAsync("/api/auth/login",
-            new { email, password = StrongPassword }, Ct);
+            new { email, password }, Ct);
         await AssertStatusAsync(HttpStatusCode.OK, response);
         return await ReadBodyAsync<AuthenticationResponse>(response);
     }

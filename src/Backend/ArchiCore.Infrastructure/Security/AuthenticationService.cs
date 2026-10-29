@@ -205,6 +205,58 @@ public sealed class AuthenticationService(
         return Result.Success(ToDto(account));
     }
 
+    public async Task<Result> ChangePasswordAsync(
+        Guid userId,
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var account = await dbContext.UserAccounts
+            .Include(user => user.RefreshTokens)
+            .SingleOrDefaultAsync(user => user.Id == userId && user.IsActive, cancellationToken);
+
+        if (account is null)
+        {
+            return Result.Failure(new Error(
+                "Authentication.UserNotFound",
+                "The user account was not found."));
+        }
+
+        var currentVerification = passwordHasher.VerifyHashedPassword(
+            account, account.PasswordHash, request.CurrentPassword ?? string.Empty);
+        if (currentVerification == PasswordVerificationResult.Failed)
+        {
+            return Result.Failure(new Error(
+                "Authentication.InvalidCurrentPassword",
+                "The current password is invalid."));
+        }
+
+        var newPassword = request.NewPassword ?? string.Empty;
+        if (!PasswordPolicy.IsStrong(newPassword))
+        {
+            return Result.Failure(new Error(
+                "Authentication.WeakPassword",
+                "Password must be at least 12 characters and include uppercase, lowercase, numeric and non-alphanumeric characters."));
+        }
+
+        if (passwordHasher.VerifyHashedPassword(account, account.PasswordHash, newPassword) != PasswordVerificationResult.Failed)
+        {
+            return Result.Failure(new Error(
+                "Authentication.NewPasswordMustDiffer",
+                "The new password must be different from the current password."));
+        }
+
+        var now = DateTime.UtcNow;
+        account.ChangePasswordHash(passwordHasher.HashPassword(account, newPassword), now);
+
+        foreach (var refreshToken in account.RefreshTokens.Where(token => token.RevokedAtUtc is null))
+        {
+            refreshToken.Revoke(now);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Success();
+    }
+
     public async Task<Result<PagedResult<UserAccountDto>>> ListUsersAsync(
         int page,
         int pageSize,
