@@ -7,7 +7,7 @@
 | Stable branch | `main` |
 | Integration target | `develop` |
 | Active implementation branch | `feat/backend-core-api` (PR #7, not yet merged) |
-| Current phase | Core API/security, transactional event audit, object-storage adapters and the first functional React operations slice are implemented and CI-validated |
+| Current phase | Core API/security, transactional event audit, object-storage adapters, operational React slice and optional containerized local stack are CI-validated |
 | Next critical work | Approve documentary domain boundaries and per-role permissions; then implement document metadata, physical locations and prioritized end-to-end business workflows |
 
 > A passing test suite validates the implemented slice, not the completeness of the ERP. This document distinguishes completed infrastructure from business workflows that still lack approved specifications.
@@ -63,12 +63,20 @@ The current backend/security/frontend work described below is on the active feat
 - [API_REFERENCE.md](../06_development/API_REFERENCE.md) records current routes, request bodies, status codes, role constraints and explicit non-implemented areas.
 - Frontend CI typechecks and produces a production build. Component tests, end-to-end release validation, detail/edit screens and approved non-admin operational views remain pending.
 
+### Containerized local stack
+- Optional profile: `docker compose --profile app up -d --build`. It runs PostgreSQL, an API container, and the compiled React frontend served by Nginx.
+- The API applies migrations automatically only when `Database:ApplyMigrationsOnStartup=true` **and** the environment is explicitly `Container`. The normal host-based Development workflow and other environments retain explicit migration commands.
+- Host ports are loopback-only: web `127.0.0.1:5173`, API `127.0.0.1:7197`, PostgreSQL `127.0.0.1:5433`. Database and local object bytes use named Docker volumes.
+- `.env.example` contains intentionally public local development credentials. Change them for your local stack and never reuse them for a deployed environment.
+- [Container smoke CI](https://github.com/julieste1012/ArchiCore/actions/runs/40970011357) successfully builds both images, starts the complete stack, checks API readiness and frontend response, and authenticates against the API through the frontend proxy. This is a local-stack smoke test, not production deployment certification.
+
 ### Automated validation
 - Domain/model test project: 38 tests, including the EF model test that generates PostgreSQL DDL.
 - Integration suite uses `WebApplicationFactory<Program>` and an isolated PostgreSQL 17 Testcontainers database. It applies the real migrations and does not use the developer's Docker Compose volume.
 - Coverage includes core API flows and associations; HTTP 404/409/422 error mapping; lifecycle transitions; object-storage safety and size checks; JWT authentication and role boundaries; refresh-token rotation/replay/concurrency; password change and token revocation; user administration; outbox persistence/rollback; audit projection; and database isolation.
-- Latest backend CI on the current code/documentation head: [96 passed, 0 failed, 0 skipped](https://github.com/julieste1012/ArchiCore/actions/runs/40969300019) (38 domain/model + 58 integration). Restore and Release build succeeded without warnings.
-- Latest frontend CI on the same head: [Typecheck and production build succeeded](https://github.com/julieste1012/ArchiCore/actions/runs/40969300022).
+- Latest backend CI: [96 passed, 0 failed, 0 skipped](https://github.com/julieste1012/ArchiCore/actions/runs/40970011472) (38 domain/model + 58 integration). Restore and Release build succeeded without warnings.
+- Latest frontend CI on the current code head: [typecheck and production build succeeded](https://github.com/julieste1012/ArchiCore/actions/runs/40970011343).
+- Full-stack container smoke on the current code head: [images built, migrations applied, health checks passed and administrator login verified](https://github.com/julieste1012/ArchiCore/actions/runs/40970011357).
 - These results validate the implemented slice only. They do not establish that all business processes of the ERP have been implemented or approved.
 
 ## 3. Domain and requirements blockers

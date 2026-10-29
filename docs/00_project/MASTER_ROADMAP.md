@@ -87,11 +87,12 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] Concurrency test for simultaneous refresh-token redemption
 - [ ] Full security review, rate limiting and package-advisory recheck before release
 
-## Phase 8 — Containers and deployment ⚠️ Development only
+## Phase 8 — Containers and deployment ⚠️ Local stack validated; production deployment pending
 - [x] Local PostgreSQL Compose service and health check
 - [x] Local connection port avoids conflict with Windows PostgreSQL
-- [ ] API and frontend Dockerfiles/Compose
-- [ ] Configure a supported object-store service and secure environment credentials
+- [x] API and frontend Dockerfiles with optional Compose profile for PostgreSQL + API + web
+- [x] Container smoke CI builds both images, applies migrations in the Container environment, checks readiness and verifies login through the frontend proxy
+- [ ] Configure a supported production object-store service and production environment credentials
 - [ ] Validate provider lifecycle and retention policies
 - [ ] Production secret management, logging/metrics
 - [ ] Backup and restore validation; production smoke test
@@ -117,4 +118,5 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] PR #2: implementation status document introduced and merged into `develop`
 - [x] PR #3: domain tests and CI merged into `develop`
 - [x] PR #4: OpenAPI dependency security update merged into `develop`
-- [ ] PR #7: core API, PostgreSQL, security, domain-event audit and first operational frontend slice (open; do not merge until final CI/diff review)
+- [x] Optional local full-stack Docker Compose profile and end-to-end container smoke check validated in CI
+- [ ] PR #7: core API, PostgreSQL, security, domain-event audit, operational frontend and local container profile (open; do not merge until final CI/diff review)
