@@ -2,6 +2,7 @@ using System.Net;
 using ArchiCore.Domain.Customers.Events;
 using ArchiCore.Integration.Tests.Infrastructure;
 using ArchiCore.Infrastructure.Persistence.Outbox;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

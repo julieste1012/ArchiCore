@@ -3,6 +3,8 @@ namespace ArchiCore.Integration.Tests.Infrastructure;
 // Response shapes as seen on the wire. They are declared here on purpose, instead of reusing the
 // Application DTOs, so a renamed or removed JSON property is detected by these tests.
 
+public sealed record DomainEventAuditResponse(Guid Id, string EventType, DateTime OccurredOnUtc, DateTime RecordedAtUtc, string Payload);
+
 public sealed record HealthResponse(string Status, string? Database);
 
 public sealed record ProblemResponse(string? Title, int? Status, string? Detail, string? Code);
