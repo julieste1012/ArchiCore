@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { AuditPage } from './pages/AuditPage';
+import { ChangePasswordForm } from './components/ChangePasswordForm';
 import { UsersPage } from './pages/UsersPage';
-import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, FolderKanban, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, UsersRound } from 'lucide-react';
+import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, FolderKanban, KeyRound, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, UsersRound } from 'lucide-react';
 import { useAuth } from './auth/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -10,7 +11,7 @@ import { ContractsPage } from './pages/ContractsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { WarehousesPage } from './pages/WarehousesPage';
 
-export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'users' | 'audit';
+export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'users' | 'audit' | 'password';
 
 const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; section: string }[] = [
   { id: 'dashboard', label: 'Panel general', icon: LayoutDashboard, section: 'ESPACIO DE TRABAJO' },
@@ -20,6 +21,7 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
   { id: 'warehouses', label: 'Bodegas', icon: PackageOpen, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'users', label: 'Usuarios', icon: UsersRound, section: 'ADMINISTRACIÓN' },
   { id: 'audit', label: 'Auditoría', icon: FileClock, section: 'ADMINISTRACIÓN' },
+  { id: 'password', label: 'Mi contraseña', icon: KeyRound, section: 'MI CUENTA' },
 ];
 
 const pageNames: Record<ViewKey, string> = {
@@ -30,6 +32,7 @@ const pageNames: Record<ViewKey, string> = {
   warehouses: 'Bodegas',
   users: 'Usuarios',
   audit: 'Auditoría',
+  password: 'Cambiar contraseña',
 };
 
 export function App() {
@@ -46,6 +49,7 @@ export function App() {
           <p className="eyebrow">CUENTA AUTENTICADA</p>
           <h1>Estamos preparando tu espacio.</h1>
           <p>Tu cuenta está activa con el rol <strong>{user.role}</strong>. La matriz de permisos de cada módulo está pendiente de aprobación, por lo que las pantallas operativas permanecen temporalmente restringidas.</p>
+          <ChangePasswordForm compact onComplete={() => void logout()} />
           <button className="primary-button" onClick={() => void logout()}><LogOut size={16} /> Cerrar sesión</button>
         </div>
       </main>
@@ -61,6 +65,7 @@ export function App() {
       case 'warehouses': return <WarehousesPage />;
       case 'users': return <UsersPage />;
       case 'audit': return <AuditPage />;
+      case 'password': return <ChangePasswordForm onComplete={() => void logout()} />;
       default: return <DashboardPage onNavigate={setView} />;
     }
   })();
