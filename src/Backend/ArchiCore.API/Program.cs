@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json.Serialization;
 using ArchiCore.Application;
 using ArchiCore.Application.Authentication;
