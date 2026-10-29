@@ -15,7 +15,47 @@ export class ApiError extends Error {
 }
 
 let activeSession: AuthenticationResponse | null = null;
+let refreshInFlight: Promise<AuthenticationResponse> | null = null;
 const sessionEvent = 'archicore:session-changed';
+
+async function refreshSession(session: AuthenticationResponse): Promise<AuthenticationResponse> {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  const request = (async () => {
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: session.refreshToken }),
+      });
+    } catch {
+      throw new ApiError('No fue posible renovar la sesión. Verifica tu conexión.', 0);
+    }
+
+    if (!response.ok) {
+      throw await readProblem(response);
+    }
+
+    const nextSession = (await response.json()) as AuthenticationResponse;
+    // Do not resurrect a session if the user logged out while the refresh was in flight.
+    if (activeSession?.refreshToken === session.refreshToken) {
+      setSession(nextSession);
+    }
+    return nextSession;
+  })();
+
+  refreshInFlight = request;
+  try {
+    return await request;
+  } finally {
+    if (refreshInFlight === request) {
+      refreshInFlight = null;
+    }
+  }
+}
 
 export function getSession(): AuthenticationResponse | null {
   return activeSession;
@@ -76,21 +116,15 @@ async function send<T>(
   if (response.status === 401 && !retried && !excludesRefresh && activeSession?.refreshToken) {
     const oldSession = activeSession;
     try {
-      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: oldSession.refreshToken }),
-      });
-
-      if (!refreshResponse.ok) {
-        setSession(null);
-        throw await readProblem(refreshResponse);
+      await refreshSession(oldSession);
+      if (!activeSession) {
+        throw new ApiError('La sesión expiró. Inicia sesión de nuevo.', 401);
       }
-
-      setSession((await refreshResponse.json()) as AuthenticationResponse);
       return send<T>(path, init, true);
     } catch (error) {
-      setSession(null);
+      if (activeSession?.refreshToken === oldSession.refreshToken) {
+        setSession(null);
+      }
       if (error instanceof ApiError) throw error;
       throw new ApiError('La sesión expiró. Inicia sesión de nuevo.', 401);
     }
