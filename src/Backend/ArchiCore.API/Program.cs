@@ -5,6 +5,7 @@ using ArchiCore.Application.Authentication;
 using ArchiCore.Infrastructure;
 using ArchiCore.Infrastructure.Persistence;
 using ArchiCore.Infrastructure.Security;
+using ArchiCore.Infrastructure.Persistence.Outbox;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -98,6 +99,12 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
+
+if (!builder.Environment.IsEnvironment("Testing") &&
+    builder.Configuration.GetValue("Outbox:DispatchEnabled", true))
+{
+    builder.Services.AddHostedService<DomainEventOutboxHostedService>();
+}
 
 var app = builder.Build();
 

@@ -54,6 +54,19 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("OutboxMessages", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Audit.DomainEventAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid");
+                    b.Property<string>("EventType").IsRequired().HasMaxLength(512).HasColumnType("character varying(512)");
+                    b.Property<DateTime>("OccurredOnUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("Payload").IsRequired().HasColumnType("jsonb");
+                    b.Property<DateTime>("RecordedAtUtc").HasColumnType("timestamp with time zone");
+                    b.HasKey("Id");
+                    b.HasIndex("EventType").HasDatabaseName("IX_DomainEventAuditEntries_EventType");
+                    b.HasIndex("OccurredOnUtc").HasDatabaseName("IX_DomainEventAuditEntries_OccurredOnUtc");
+                    b.ToTable("DomainEventAuditEntries", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Infrastructure.Security.UserAccount", b =>
                 {
                     b.Property<Guid>("Id").HasColumnType("uuid");

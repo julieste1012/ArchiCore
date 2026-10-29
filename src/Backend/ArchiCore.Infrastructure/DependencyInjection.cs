@@ -1,6 +1,7 @@
 using ArchiCore.Application.Abstractions.Persistence;
 using ArchiCore.Infrastructure.Persistence;
 using ArchiCore.Infrastructure.Persistence.Repositories;
+using ArchiCore.Infrastructure.Persistence.Outbox;
 using ArchiCore.Application.Authentication;
 using ArchiCore.Infrastructure.Security;
 using Microsoft.AspNetCore.Identity;
@@ -30,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<BootstrapAdminSeeder>();
+        services.AddScoped<IDomainEventOutboxProcessor, DomainEventOutboxProcessor>();
         return services;
     }
 }

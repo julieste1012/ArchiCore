@@ -6,6 +6,7 @@ using ArchiCore.Domain.Events;
 using ArchiCore.Domain.Projects;
 using ArchiCore.Domain.Warehouses;
 using ArchiCore.Infrastructure.Persistence.Outbox;
+using ArchiCore.Infrastructure.Persistence.Audit;
 using ArchiCore.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,7 @@ public sealed class ArchiCoreDbContext(DbContextOptions<ArchiCoreDbContext> opti
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<DomainEventAuditEntry> DomainEventAuditEntries => Set<DomainEventAuditEntry>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<RefreshTokenRecord> RefreshTokens => Set<RefreshTokenRecord>();
 

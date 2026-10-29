@@ -27,6 +27,16 @@ public sealed class OutboxMessage
 
     public DateTime? ProcessedAtUtc { get; private set; }
 
+    internal void MarkProcessed(DateTime processedAtUtc)
+    {
+        if (ProcessedAtUtc is not null)
+        {
+            return;
+        }
+
+        ProcessedAtUtc = DateTime.SpecifyKind(processedAtUtc, DateTimeKind.Utc);
+    }
+
     private OutboxMessage()
     {
     }
