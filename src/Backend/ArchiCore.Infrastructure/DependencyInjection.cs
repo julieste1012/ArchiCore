@@ -33,7 +33,7 @@ public static class DependencyInjection
         {
             services.AddSingleton<IObjectStorage>(provider =>
             {
-                var environment = provider.GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>();
+                var environment = provider.GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
                 var root = Path.IsPathRooted(storageSettings.LocalPath)
                     ? storageSettings.LocalPath
                     : Path.Combine(environment.ContentRootPath, storageSettings.LocalPath);
