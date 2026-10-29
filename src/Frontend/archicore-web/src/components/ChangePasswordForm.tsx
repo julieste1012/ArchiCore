@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { KeyRound, ShieldCheck } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import { api, ApiError } from '../api/client';
 import { ErrorMessage, SuccessMessage } from './Feedback';
 
