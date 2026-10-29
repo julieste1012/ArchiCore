@@ -230,6 +230,25 @@ td:first-child { min-width: 180px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
+.project-row-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 122px; }
+.project-assignment-row > td { white-space: normal; padding: 0; background: #f8faf8; }
+.assignment-manager { padding: 22px; }
+.assignment-manager-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
+.assignment-manager-heading h3 { margin: 4px 0 0; color: #31473a; font-size: 16px; }
+.assignment-manager-heading .eyebrow { margin: 0; }
+.assignment-empty { color: #7b8a80; font-size: 12px; padding: 15px 0; }
+.assignment-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; margin: 14px 0 20px; }
+.assignment-item { padding: 13px 14px; background: #fff; border: 1px solid #e4ebe5; border-radius: 10px; }
+.assignment-item-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.assignment-item-title strong { color: #304638; font-size: 12px; }
+.assignment-item p { margin: 9px 0; color: #7b8a80; font-size: 10px; line-height: 1.5; }
+.assignment-release { color: #a34b46; }
+.assignment-form { display: grid; grid-template-columns: minmax(180px,1fr) minmax(220px,1fr) auto; align-items: end; gap: 12px; padding: 16px; background: #fff; border: 1px solid #e4ebe5; border-radius: 11px; }
+.assignment-form-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.assignment-form-field label { color: #65776a; font-size: 10px; font-weight: 750; }
+.assignment-form-field input,.assignment-form-field select { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #e0e8e2; border-radius: 8px; background: #fff; color: #304638; font-size: 11px; }
+.assignment-form-action { display: flex; }
+.assignment-form-action button { white-space: nowrap; }
 @media (max-width: 1100px) {
   .app-shell { grid-template-columns: 220px minmax(0,1fr); }
   .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -270,6 +289,10 @@ td:first-child { min-width: 180px; }
   .form-grid { grid-template-columns: 1fr; }
   .form-actions { justify-content: stretch; }
   .form-actions button { width: 100%; }
+  .assignment-manager { padding: 15px; }
+  .assignment-form { grid-template-columns: 1fr; }
+  .assignment-form-action button { width: 100%; }
+  .assignment-manager-heading { flex-direction: column; }
   .app-footer { padding: 13px 16px; gap: 10px; flex-wrap: wrap; }
 }
 
