@@ -1,16 +1,85 @@
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using ArchiCore.Application;
+using ArchiCore.Application.Authentication;
 using ArchiCore.Infrastructure;
 using ArchiCore.Infrastructure.Persistence;
+using ArchiCore.Infrastructure.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var signingKey = builder.Configuration["Jwt:SigningKey"];
+if (string.IsNullOrWhiteSpace(signingKey) && builder.Environment.IsEnvironment("Testing"))
+{
+    signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["Jwt:SigningKey"] = signingKey
+    });
+}
+
+if (string.IsNullOrWhiteSpace(signingKey))
+{
+    throw new InvalidOperationException(
+        "Missing Jwt:SigningKey. Set Jwt__SigningKey via environment variables or .NET user-secrets. Use a base64-encoded random key of at least 32 bytes.");
+}
+
+byte[] signingKeyBytes;
+try
+{
+    signingKeyBytes = Convert.FromBase64String(signingKey);
+}
+catch (FormatException exception)
+{
+    throw new InvalidOperationException("Jwt:SigningKey must be base64-encoded key material.", exception);
+}
+
+if (signingKeyBytes.Length < 32)
+{
+    throw new InvalidOperationException("Jwt:SigningKey must decode to at least 32 bytes.");
+}
+
+var jwtSettings = new JwtSettings
+{
+    Issuer = builder.Configuration["Jwt:Issuer"] ?? "ArchiCore",
+    Audience = builder.Configuration["Jwt:Audience"] ?? "ArchiCore.Client",
+    SigningKey = signingKey,
+    AccessTokenMinutes = int.TryParse(builder.Configuration["Jwt:AccessTokenMinutes"], out var accessMinutes)
+        ? Math.Clamp(accessMinutes, 5, 30)
+        : 15,
+    RefreshTokenDays = int.TryParse(builder.Configuration["Jwt:RefreshTokenDays"], out var refreshDays)
+        ? Math.Clamp(refreshDays, 1, 30)
+        : 14
+};
+
+builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(signingKeyBytes),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = "name",
+            RoleClaimType = "role"
+        };
+    });
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
 
@@ -21,7 +90,23 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+var bootstrapEmail = app.Configuration["BootstrapAdmin:Email"];
+if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+{
+    var bootstrapPassword = app.Configuration["BootstrapAdmin:Password"];
+    var bootstrapDisplayName = app.Configuration["BootstrapAdmin:DisplayName"] ?? "ArchiCore Administrator";
+    if (string.IsNullOrWhiteSpace(bootstrapPassword))
+    {
+        throw new InvalidOperationException("BootstrapAdmin:Password must be configured when BootstrapAdmin:Email is set.");
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<BootstrapAdminSeeder>();
+    await seeder.EnsureAsync(bootstrapEmail, bootstrapPassword, bootstrapDisplayName);
+}
+
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -54,6 +54,40 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("OutboxMessages", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Infrastructure.Security.UserAccount", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("DisplayName").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)");
+                    b.Property<string>("Email").IsRequired().HasMaxLength(254).HasColumnType("character varying(254)");
+                    b.Property<int>("FailedLoginAttempts").HasColumnType("integer");
+                    b.Property<bool>("IsActive").HasColumnType("boolean");
+                    b.Property<DateTime?>("LockoutEndUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("NormalizedEmail").IsRequired().HasMaxLength(254).HasColumnType("character varying(254)");
+                    b.Property<string>("PasswordHash").IsRequired().HasMaxLength(512).HasColumnType("character varying(512)");
+                    b.Property<string>("Role").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)");
+                    b.Property<DateTime?>("UpdatedAtUtc").HasColumnType("timestamp with time zone");
+                    b.HasKey("Id");
+                    b.HasIndex("NormalizedEmail").IsUnique().HasDatabaseName("IX_UserAccounts_NormalizedEmail");
+                    b.ToTable("UserAccounts", (string)null);
+                    b.Navigation("RefreshTokens");
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid");
+                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<DateTime>("ExpiresAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("ReplacedByTokenHash").HasMaxLength(64).HasColumnType("character varying(64)");
+                    b.Property<DateTime?>("RevokedAtUtc").IsConcurrencyToken().HasColumnType("timestamp with time zone");
+                    b.Property<string>("TokenHash").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)");
+                    b.Property<Guid>("UserAccountId").HasColumnType("uuid");
+                    b.HasKey("Id");
+                    b.HasIndex("TokenHash").IsUnique().HasDatabaseName("IX_RefreshTokens_TokenHash");
+                    b.HasIndex("UserAccountId").HasDatabaseName("IX_RefreshTokens_UserAccountId");
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.Contracts.Contract", b =>
                 {
                     b.Property<Guid>("Id")
@@ -350,6 +384,16 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
 
                     b.Navigation("WarehouseAssignments");
                 });
+            modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
+                {
+                    b.HasOne("ArchiCore.Infrastructure.Security.UserAccount", "UserAccount")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                    b.Navigation("UserAccount");
+                });
+
 #pragma warning restore 612, 618
         }
     }

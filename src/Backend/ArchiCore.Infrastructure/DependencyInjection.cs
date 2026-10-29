@@ -1,6 +1,9 @@
 using ArchiCore.Application.Abstractions.Persistence;
 using ArchiCore.Infrastructure.Persistence;
 using ArchiCore.Infrastructure.Persistence.Repositories;
+using ArchiCore.Application.Authentication;
+using ArchiCore.Infrastructure.Security;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +27,9 @@ public static class DependencyInjection
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+        services.AddSingleton<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<BootstrapAdminSeeder>();
         return services;
     }
 }

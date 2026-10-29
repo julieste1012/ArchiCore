@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
+using ArchiCore.Application.Authentication;
 using System.ComponentModel.DataAnnotations;
 using ArchiCore.Application.Projects;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArchiCore.API.Controllers;
 
+[Authorize(Roles = AppRoles.SystemAdministrator)]
 [Route("api/projects")]
 public sealed class ProjectsController(ProjectService service) : ApiControllerBase
 {

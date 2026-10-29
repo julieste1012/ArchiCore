@@ -1,9 +1,12 @@
+using Microsoft.AspNetCore.Authorization;
+using ArchiCore.Application.Authentication;
 using System.ComponentModel.DataAnnotations;
 using ArchiCore.Application.Warehouses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArchiCore.API.Controllers;
 
+[Authorize(Roles = AppRoles.SystemAdministrator)]
 [Route("api/warehouses")]
 public sealed class WarehousesController(WarehouseService service) : ApiControllerBase
 {

@@ -17,7 +17,14 @@ public abstract class ApiControllerBase : ControllerBase
         "Project.ContractNotFound",
         "Project.WarehouseNotFound",
         "Project.WarehouseAssignmentNotFound",
-        "Warehouse.NotFound"
+        "Warehouse.NotFound",
+        "Authentication.UserNotFound"
+    };
+
+    private static readonly HashSet<string> UnauthorizedErrorCodes = new(StringComparer.Ordinal)
+    {
+        "Authentication.InvalidCredentials",
+        "Authentication.InvalidRefreshToken"
     };
 
     private static readonly HashSet<string> ConflictErrorCodes = new(StringComparer.Ordinal)
@@ -46,6 +53,7 @@ public abstract class ApiControllerBase : ControllerBase
         "Warehouse.InvalidMaintenance",
         "Warehouse.InvalidClose",
         "Warehouse.InvalidArchive",
+        "Authentication.EmailAlreadyExists",
         "Box.InvalidMove",
         "Box.InvalidReturn",
         "Box.InvalidArchive"
@@ -75,13 +83,16 @@ public abstract class ApiControllerBase : ControllerBase
             return StatusCodes.Status404NotFound;
         }
 
+        if (UnauthorizedErrorCodes.Contains(code))
+        {
+            return StatusCodes.Status401Unauthorized;
+        }
+
         if (ConflictErrorCodes.Contains(code))
         {
             return StatusCodes.Status409Conflict;
         }
 
-        // Validation and domain-rule failures that do not indicate a missing resource
-        // or a conflicting state remain HTTP 422.
         return StatusCodes.Status422UnprocessableEntity;
     }
 }
