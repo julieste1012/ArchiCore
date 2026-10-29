@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using ArchiCore.Application.Authentication;
+using ArchiCore.Domain.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,5 +56,31 @@ public sealed class AuthenticationController(IAuthenticationService authenticati
         return result.IsFailure
             ? ToProblem(result.Error)
             : StatusCode(StatusCodes.Status201Created, result.Value);
+    }
+
+    [HttpGet("users")]
+    [Authorize(Roles = AppRoles.SystemAdministrator)]
+    public async Task<IActionResult> ListUsers(
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, 100)] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+        => ToResponse(await authenticationService.ListUsersAsync(page, pageSize, cancellationToken));
+
+    [HttpPut("users/{id:guid}/status")]
+    [Authorize(Roles = AppRoles.SystemAdministrator)]
+    public async Task<IActionResult> SetUserStatus(
+        Guid id,
+        SetUserStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var currentSubject = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (!request.IsActive && Guid.TryParse(currentSubject, out var currentUserId) && currentUserId == id)
+        {
+            return ToProblem(new Error(
+                "Authentication.CannotDeactivateSelf",
+                "You cannot deactivate your own administrator account."));
+        }
+
+        return ToResponse(await authenticationService.SetUserActiveAsync(id, request.IsActive, cancellationToken));
     }
 }

@@ -9,6 +9,7 @@ using ArchiCore.Infrastructure.Persistence.Outbox;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,6 +96,31 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30),
             NameClaimType = "name",
             RoleClaimType = "role"
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var subject = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                var versionClaim = context.Principal?.FindFirst("ver")?.Value;
+                if (!Guid.TryParse(subject, out var userId)
+                    || !int.TryParse(versionClaim, out var tokenVersion))
+                {
+                    context.Fail("The token does not contain a valid user identity.");
+                    return;
+                }
+
+                var dbContext = context.HttpContext.RequestServices.GetRequiredService<ArchiCoreDbContext>();
+                var account = await dbContext.UserAccounts.AsNoTracking()
+                    .Where(user => user.Id == userId)
+                    .Select(user => new { user.IsActive, user.TokenVersion })
+                    .SingleOrDefaultAsync(context.HttpContext.RequestAborted);
+
+                if (account is null || !account.IsActive || account.TokenVersion != tokenVersion)
+                {
+                    context.Fail("The user account is inactive or the access token has been revoked.");
+                }
+            }
         };
     });
 builder.Services.AddAuthorization();

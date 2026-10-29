@@ -73,6 +73,7 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc").HasColumnType("timestamp with time zone");
                     b.Property<string>("DisplayName").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)");
                     b.Property<string>("Email").IsRequired().HasMaxLength(254).HasColumnType("character varying(254)");
+                    b.Property<int>("TokenVersion").HasColumnType("integer").HasDefaultValue(0);
                     b.Property<int>("FailedLoginAttempts").HasColumnType("integer");
                     b.Property<bool>("IsActive").HasColumnType("boolean");
                     b.Property<DateTime?>("LockoutEndUtc").HasColumnType("timestamp with time zone");

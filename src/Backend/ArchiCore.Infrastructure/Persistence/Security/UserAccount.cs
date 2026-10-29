@@ -22,6 +22,7 @@ public sealed class UserAccount
     public string PasswordHash { get; private set; }
     public string Role { get; private set; }
     public bool IsActive { get; private set; }
+    public int TokenVersion { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
     public int FailedLoginAttempts { get; private set; }
@@ -44,6 +45,23 @@ public sealed class UserAccount
             CreatedAtUtc = DateTime.UtcNow,
             FailedLoginAttempts = 0
         };
+    }
+
+    internal void SetActive(bool isActive, DateTime nowUtc)
+    {
+        if (IsActive == isActive)
+        {
+            return;
+        }
+
+        IsActive = isActive;
+        TokenVersion++;
+        UpdatedAtUtc = nowUtc;
+
+        if (isActive)
+        {
+            ResetFailedLoginState(nowUtc);
+        }
     }
 
     internal void SetPasswordHash(string hash)

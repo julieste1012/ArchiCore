@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ArchiCore.Application.Common;
 using ArchiCore.Domain.Common;
 
 namespace ArchiCore.Application.Authentication;
@@ -24,6 +25,8 @@ public sealed record UserAccountDto(
     bool IsActive,
     DateTime CreatedAtUtc);
 
+public sealed record SetUserStatusRequest(bool IsActive);
+
 public sealed record AuthenticationResponse(
     string AccessToken,
     DateTime AccessTokenExpiresAtUtc,
@@ -38,4 +41,6 @@ public interface IAuthenticationService
     Task RevokeRefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default);
     Task<Result<UserAccountDto>> GetUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<Result<UserAccountDto>> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<UserAccountDto>>> ListUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<Result<UserAccountDto>> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
 }

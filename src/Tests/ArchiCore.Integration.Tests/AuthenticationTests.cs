@@ -169,6 +169,89 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
         await AssertStatusAsync(HttpStatusCode.Conflict, duplicate);
     }
 
+    [Fact]
+    public async Task Administrator_can_list_users_and_the_response_is_paged()
+    {
+        var email = $"list-{Guid.NewGuid():N}@archicore.test";
+        using var created = await Client.PostAsJsonAsync("/api/auth/users", new
+        {
+            email,
+            displayName = "List User",
+            password = StrongPassword,
+            role = AppRoles.ArchiveTechnician
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Created, created);
+
+        using var page = await Client.GetAsync("/api/auth/users?page=1&pageSize=1", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, page);
+        var result = await ReadBodyAsync<PagedResponse<UserAccountDto>>(page);
+        Assert.Equal(1, result.Items.Count);
+        Assert.True(result.TotalCount >= 2);
+    }
+
+    [Fact]
+    public async Task Deactivation_revokes_refresh_sessions_and_invalidates_existing_access_tokens_even_after_reactivation()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var account = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
+        var session = await LoginAsync(anonymous, account.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var deactivated = await Client.PutAsJsonAsync($"/api/auth/users/{account.Id}/status", new { IsActive = false }, Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, deactivated);
+        var disabled = await ReadBodyAsync<UserAccountDto>(deactivated);
+        Assert.False(disabled.IsActive);
+
+        using var oldAccess = await anonymous.GetAsync("/api/auth/me", Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, oldAccess);
+
+        anonymous.DefaultRequestHeaders.Authorization = null;
+        using var oldRefresh = await anonymous.PostAsJsonAsync("/api/auth/refresh", new { refreshToken = session.RefreshToken }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, oldRefresh);
+
+        using var reactivated = await Client.PutAsJsonAsync($"/api/auth/users/{account.Id}/status", new { IsActive = true }, Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, reactivated);
+        var enabled = await ReadBodyAsync<UserAccountDto>(reactivated);
+        Assert.True(enabled.IsActive);
+
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+        using var staleAccess = await anonymous.GetAsync("/api/auth/me", Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, staleAccess);
+
+        anonymous.DefaultRequestHeaders.Authorization = null;
+        var newSession = await LoginAsync(anonymous, account.Email);
+        Assert.NotEqual(session.AccessToken, newSession.AccessToken);
+    }
+
+    [Fact]
+    public async Task Administrator_cannot_deactivate_their_own_account()
+    {
+        using var meResponse = await Client.GetAsync("/api/auth/me", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, meResponse);
+        var me = await ReadBodyAsync<UserAccountDto>(meResponse);
+
+        using var response = await Client.PutAsJsonAsync($"/api/auth/users/{me.Id}/status", new { IsActive = false }, Ct);
+
+        await AssertStatusAsync(HttpStatusCode.Conflict, response);
+        var problem = await ReadBodyAsync<ProblemResponse>(response);
+        Assert.Equal("Authentication.CannotDeactivateSelf", problem.Code);
+    }
+
+    [Fact]
+    public async Task Non_administrator_cannot_list_or_deactivate_users()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var user = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
+        var session = await LoginAsync(anonymous, user.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var list = await anonymous.GetAsync("/api/auth/users", Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, list);
+
+        using var deactivate = await anonymous.PutAsJsonAsync($"/api/auth/users/{user.Id}/status", new { IsActive = false }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, deactivate);
+    }
+
     private async Task<UserAccountDto> CreateUserAsync(HttpClient anonymous, string role)
     {
         var email = $"test-{Guid.NewGuid():N}@archicore.test";

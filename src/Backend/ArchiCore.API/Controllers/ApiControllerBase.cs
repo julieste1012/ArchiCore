@@ -54,6 +54,8 @@ public abstract class ApiControllerBase : ControllerBase
         "Warehouse.InvalidClose",
         "Warehouse.InvalidArchive",
         "Authentication.EmailAlreadyExists",
+        "Authentication.CannotDeactivateSelf",
+        "Authentication.CannotDeactivateLastAdministrator",
         "Box.InvalidMove",
         "Box.InvalidReturn",
         "Box.InvalidArchive"

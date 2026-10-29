@@ -22,6 +22,7 @@ internal sealed class UserAccountConfiguration : IEntityTypeConfiguration<UserAc
         builder.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
         builder.Property(x => x.Role).HasMaxLength(64).IsRequired();
         builder.Property(x => x.IsActive).IsRequired();
+        builder.Property(x => x.TokenVersion).HasDefaultValue(0).IsRequired();
         builder.Property(x => x.CreatedAtUtc).HasColumnType("timestamp with time zone").IsRequired();
         builder.Property(x => x.UpdatedAtUtc).HasColumnType("timestamp with time zone");
         builder.Property(x => x.FailedLoginAttempts).IsRequired();

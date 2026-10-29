@@ -204,6 +204,72 @@ public sealed class AuthenticationService(
         return Result.Success(ToDto(account));
     }
 
+    public async Task<Result<PagedResult<UserAccountDto>>> ListUsersAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = dbContext.UserAccounts.AsNoTracking().OrderBy(user => user.NormalizedEmail);
+        var totalCount = await query.CountAsync(cancellationToken);
+        var accounts = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var items = accounts.Select(ToDto).ToArray();
+
+        return Result.Success(new PagedResult<UserAccountDto>(page, pageSize, totalCount, items));
+    }
+
+    public async Task<Result<UserAccountDto>> SetUserActiveAsync(
+        Guid userId,
+        bool isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var account = await dbContext.UserAccounts
+            .Include(user => user.RefreshTokens)
+            .SingleOrDefaultAsync(user => user.Id == userId, cancellationToken);
+
+        if (account is null)
+        {
+            return Result.Failure<UserAccountDto>(
+                new Error("Authentication.UserNotFound", "The user account was not found."));
+        }
+
+        if (account.IsActive == isActive)
+        {
+            return Result.Success(ToDto(account));
+        }
+
+        if (!isActive && account.Role == AppRoles.SystemAdministrator)
+        {
+            var activeAdministrators = await dbContext.UserAccounts.CountAsync(
+                user => user.IsActive && user.Role == AppRoles.SystemAdministrator,
+                cancellationToken);
+
+            if (activeAdministrators <= 1)
+            {
+                return Result.Failure<UserAccountDto>(
+                    new Error(
+                        "Authentication.CannotDeactivateLastAdministrator",
+                        "At least one active System Administrator must remain."));
+            }
+        }
+
+        var now = DateTime.UtcNow;
+        account.SetActive(isActive, now);
+
+        if (!isActive)
+        {
+            foreach (var refreshToken in account.RefreshTokens.Where(token => token.RevokedAtUtc is null))
+            {
+                refreshToken.Revoke(now);
+            }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Result.Success(ToDto(account));
+    }
+
     private async Task<AuthenticationResponse> IssueSessionAsync(
         UserAccount user,
         CancellationToken cancellationToken)
@@ -235,6 +301,7 @@ public sealed class AuthenticationService(
             new System.Security.Claims.Claim(JwtRegisteredClaimNames.Email, user.Email),
             new System.Security.Claims.Claim(JwtRegisteredClaimNames.Name, user.DisplayName),
             new System.Security.Claims.Claim("role", user.Role),
+            new System.Security.Claims.Claim("ver", user.TokenVersion.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             new System.Security.Claims.Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
         };
 
