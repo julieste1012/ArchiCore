@@ -7,6 +7,8 @@ Active implementation: `feat/backend-core-api` (PR #7, pending final review)
 Current phase: Core API + authentication/audit + operational frontend slice; documentary business workflows pending
 
 > This roadmap describes the active feature branch, not code already merged into `develop`. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for CI evidence, exact limits and domain blockers.
+>
+> Domain and business decisions required before documentary persistence: [DOMAIN_DECISIONS_TO_APPROVE.md](../03_domain/DOMAIN_DECISIONS_TO_APPROVE.md). Proposals there are not approved requirements.
 
 ## Phase 0 — Foundation ✅
 - [x] Repository and solution structure
@@ -22,6 +24,7 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [ ] Confirm customer identity/contact details and documentary metadata
 - [ ] Approve endpoint permissions by business role
 - [ ] Finalize actor-level audit, retention and security requirements
+- [ ] Close and approve the documented domain decisions before designing documentary schema or APIs
 
 ## Phase 2 — Domain ⚠️ Partial implementation
 - [x] Domain base primitives and Result pattern
