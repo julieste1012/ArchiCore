@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using ArchiCore.Application.Authentication;
 using ArchiCore.Domain.Common;
