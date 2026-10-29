@@ -9,7 +9,6 @@
 **/App_Data/Objects/
 .env
 .env.*
-! .env.example
 **/*.user
 **/*.suo
 **/*.log
