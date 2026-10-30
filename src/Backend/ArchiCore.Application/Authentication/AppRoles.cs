@@ -1,8 +1,9 @@
 namespace ArchiCore.Application.Authentication;
 
 /// <summary>
-/// Approved business-role names from docs/02_business/02_BusinessRoles.md.
-/// Permission assignments remain conservative until their matrix is approved.
+/// Official business-role identifiers defined in docs/02_business/02_BusinessRoles.md.
+/// The API authorization policies map these roles to operations using that document's
+/// approved responsibilities and responsibility matrix.
 /// </summary>
 public static class AppRoles
 {
