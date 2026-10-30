@@ -241,7 +241,7 @@ export function ReceptionsPage({ role }: ReceptionsPageProps) {
                         <td><StatusBadge status={reception.status} /></td>
                         <td>
                           <div className="reception-row-actions">
-                            {reception.status === 'Received' && canInspectOrCount && <button className="table-action" onClick={() => { setActiveReceptionId(reception.id); setActiveAction('inspection'); }}>Inspeccionar</button>}
+                            {reception.status === 'Received' && canInspectOrCount && <button className="table-action" onClick={() => { setSafeToAccept('true'); setInspectionObservations(''); setActiveReceptionId(reception.id); setActiveAction('inspection'); }}>Inspeccionar</button>}
                             {reception.status === 'Inspected' && canInspectOrCount && <button className="table-action" onClick={() => { setDeclaredBoxes('0'); setDeclaredFolders('0'); setCountedBoxes('0'); setCountedFolders('0'); setActiveReceptionId(reception.id); setActiveAction('counting'); }}>Registrar conteo</button>}
                             {reception.status === 'CountingRecorded' && canApprove && <button className="table-action" disabled={workingId === reception.id} onClick={() => void approveCounting(reception)}><CheckCheck size={14} /> Aprobar</button>}
                             {!isTerminal && canApprove && <button className="table-action reception-suspend-action" onClick={() => { setActiveReceptionId(reception.id); setActiveAction('suspend'); }}>Suspender</button>}
