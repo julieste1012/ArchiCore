@@ -262,7 +262,40 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
         await AssertStatusAsync(HttpStatusCode.Forbidden, createWarehouse);
 
         using var projects = await anonymous.GetAsync("/api/projects", Ct);
-        await AssertStatusAsync(HttpStatusCode.Forbidden, projects);
+        await AssertStatusAsync(HttpStatusCode.OK, projects);
+    }
+
+    [Fact]
+    public async Task Archive_technician_and_digitization_operator_can_read_project_context_without_operational_write_access()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var technician = await CreateUserAsync(anonymous, AppRoles.ArchiveTechnician);
+        var technicianSession = await LoginAsync(anonymous, technician.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", technicianSession.AccessToken);
+
+        using var technicianProjects = await anonymous.GetAsync("/api/projects", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, technicianProjects);
+
+        using var technicianWarehouses = await anonymous.GetAsync("/api/warehouses", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, technicianWarehouses);
+
+        using var technicianCreateProject = await anonymous.PostAsJsonAsync("/api/projects", new
+        {
+            projectCode = TestData.ProjectCode(),
+            contractId = Guid.NewGuid()
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, technicianCreateProject);
+
+        anonymous.DefaultRequestHeaders.Authorization = null;
+        var operatorAccount = await CreateUserAsync(anonymous, AppRoles.DigitizationOperator);
+        var operatorSession = await LoginAsync(anonymous, operatorAccount.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", operatorSession.AccessToken);
+
+        using var operatorProjects = await anonymous.GetAsync("/api/projects", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, operatorProjects);
+
+        using var operatorWarehouses = await anonymous.GetAsync("/api/warehouses", Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, operatorWarehouses);
     }
 
     [Fact]
