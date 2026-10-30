@@ -168,6 +168,31 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("DocumentaryReceptions", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.Boxes.Box", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid");
+                    b.Property<string>("BoxCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+                    b.Property<DateTime>("CreatedAt").HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("UpdatedAt").HasColumnType("timestamp with time zone");
+                    b.HasKey("Id");
+                    b.HasIndex("BoxCode").IsUnique().HasDatabaseName("UX_Boxes_BoxCode");
+                    b.HasIndex("Barcode")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Boxes_Barcode")
+                        .HasFilter("\"Barcode\" IS NOT NULL");
+                    b.ToTable("Boxes", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.Contracts.Contract", b =>
                 {
                     b.Property<Guid>("Id")
