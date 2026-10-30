@@ -22,7 +22,9 @@ const projectLifecycleActions: LifecycleActionSpec[] = [
   { fromStatus: 'Closed', endpoint: 'archive', label: 'Archivar', successStatus: 'Archivado', confirmationMessage: '¿Archivar este proyecto? Esta acción cambia su estado de forma permanente.' },
 ];
 
-type ProjectsPageProps = { canOperate?: boolean };\n\nexport function ProjectsPage({ canOperate = true }: ProjectsPageProps) {
+type ProjectsPageProps = { canOperate?: boolean };
+
+export function ProjectsPage({ canOperate = true }: ProjectsPageProps) {
   const [data, setData] = useState<PagedResult<Project> | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
