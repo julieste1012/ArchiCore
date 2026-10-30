@@ -10,7 +10,7 @@ public sealed class BoxService(
     IBoxRepository boxes,
     IUnitOfWork unitOfWork)
 {
-    public async Task<PagedResult<BoxDto>> ListAsync(
+    public async Task<Result<PagedResult<BoxDto>>> ListAsync(
         BoxStatus? status,
         string? barcode,
         int page,
@@ -18,21 +18,25 @@ public sealed class BoxService(
         CancellationToken cancellationToken = default)
     {
         (page, pageSize) = NormalizePage(page, pageSize);
-        var barcodeResult = string.IsNullOrWhiteSpace(barcode)
-            ? null
-            : Barcode.Create(barcode);
-        if (barcodeResult is { IsFailure: true })
+        Barcode? barcodeValue = null;
+        if (!string.IsNullOrWhiteSpace(barcode))
         {
-            return new PagedResult<BoxDto>(page, pageSize, 0, Array.Empty<BoxDto>());
+            var barcodeResult = Barcode.Create(barcode);
+            if (barcodeResult.IsFailure)
+            {
+                return Result.Failure<PagedResult<BoxDto>>(barcodeResult.Error);
+            }
+
+            barcodeValue = barcodeResult.Value;
         }
 
-        var barcodeValue = barcodeResult?.Value;
         var skipLong = ((long)page - 1L) * pageSize;
         var skip = (int)Math.Min(skipLong, int.MaxValue);
         var items = await boxes.ListAsync(status, barcodeValue, skip, pageSize, cancellationToken);
         var totalCount = await boxes.CountAsync(status, barcodeValue, cancellationToken);
 
-        return new PagedResult<BoxDto>(page, pageSize, totalCount, items.Select(ToDto).ToArray());
+        return Result.Success(new PagedResult<BoxDto>(
+            page, pageSize, totalCount, items.Select(ToDto).ToArray()));
     }
 
     public async Task<Result<BoxDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
