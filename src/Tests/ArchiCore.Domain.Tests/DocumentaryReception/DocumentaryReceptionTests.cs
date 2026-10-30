@@ -2,7 +2,7 @@ using ArchiCore.Domain.DocumentaryReception;
 using ArchiCore.Domain.DocumentaryReception.Events;
 using Xunit;
 
-namespace ArchiCore.Domain.Tests.DocumentaryReception;
+namespace ArchiCore.Domain.Tests.Receptions;
 
 public sealed class DocumentaryReceptionTests
 {
