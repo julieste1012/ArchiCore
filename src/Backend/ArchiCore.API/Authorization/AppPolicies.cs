@@ -36,6 +36,9 @@ public static class AppPolicies
                 AppRoles.SystemAdministrator,
                 AppRoles.AdministrativeManager,
                 AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveTechnician,
+                AppRoles.ArchiveAssistant,
+                AppRoles.DigitizationOperator,
                 AppRoles.BillingAssistant));
 
             options.AddPolicy(ContractsManage, policy => policy.RequireRole(
@@ -59,6 +62,7 @@ public static class AppPolicies
             options.AddPolicy(WarehousesRead, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator,
                 AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveTechnician,
                 AppRoles.ArchiveAssistant));
 
             // Warehouse creation and lifecycle administration remain technical/
