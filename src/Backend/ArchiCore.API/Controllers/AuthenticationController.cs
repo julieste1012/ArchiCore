@@ -69,7 +69,14 @@ public sealed class AuthenticationController(IAuthenticationService authenticati
     [Authorize(Roles = AppRoles.SystemAdministrator)]
     public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken)
     {
-        var result = await authenticationService.CreateUserAsync(request, cancellationToken);
+        var actorSubject = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var actorRole = User.FindFirst("role")?.Value ?? string.Empty;
+        if (!Guid.TryParse(actorSubject, out var actorUserId) || string.IsNullOrWhiteSpace(actorRole))
+        {
+            return Unauthorized();
+        }
+
+        var result = await authenticationService.CreateUserAsync(request, actorUserId, actorRole, cancellationToken);
         return result.IsFailure
             ? ToProblem(result.Error)
             : StatusCode(StatusCodes.Status201Created, result.Value);
@@ -98,6 +105,13 @@ public sealed class AuthenticationController(IAuthenticationService authenticati
                 "You cannot deactivate your own administrator account."));
         }
 
-        return ToResponse(await authenticationService.SetUserActiveAsync(id, request.IsActive, cancellationToken));
+        var actorRole = User.FindFirst("role")?.Value ?? string.Empty;
+        if (!Guid.TryParse(currentSubject, out var actorUserId) || string.IsNullOrWhiteSpace(actorRole))
+        {
+            return Unauthorized();
+        }
+
+        return ToResponse(await authenticationService.SetUserActiveAsync(
+            id, request.IsActive, actorUserId, actorRole, cancellationToken));
     }
 }
