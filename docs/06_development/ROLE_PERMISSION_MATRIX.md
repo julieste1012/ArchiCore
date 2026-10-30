@@ -19,7 +19,9 @@ This document maps approved business responsibilities to API authorization polic
 | User administration and technical audit | ✓ | — | — | — | — | — | — | — |
 | Documentary verification, classification, labeling | Not exposed yet | — | — | ✓ | — | — | — | — |
 | Physical storage, movement, loan hand-off/return | Not exposed yet | — | — | — | ✓ | — | — | — |
-| Reception and counting | Not exposed yet | — | ✓ | — | ✓ | — | — | — |
+| Reception creation and count approval/suspension | ✓ | — | ✓ | — | — | — | — | — |
+| Physical inspection and count recording | ✓ | — | ✓ | — | ✓ | — | — | — |
+| Reception record read | ✓ | — | ✓ | ✓ | ✓ | — | — | — |
 | Loan authorization | Not exposed yet | — | ✓ | — | — | — | — | — |
 | Digitization workflow | Not exposed yet | — | — | — | — | ✓ | — | — |
 | Operational billing preparation and validation | Not exposed yet | ✓ | — | — | — | — | ✓ | — |
@@ -31,14 +33,15 @@ This document maps approved business responsibilities to API authorization polic
 - `Contracts.Read`, `Contracts.Manage`
 - `Projects.Read`, `Projects.Operate`, `Projects.AssignWarehouses`
 - `Warehouses.Read`, `Warehouses.Manage`
+- `Receptions.Read`, `Receptions.Receive`, `Receptions.Inspect`, `Receptions.Count`, `Receptions.Approve`
 
 ## Boundaries and safeguards
 
 1. System Administrator handles technical administration; the business workflows remain assigned to their operational roles.
 2. Administrative Manager supervises customer and contract administration, billing supervision, and operational indicators. Project Coordinator may read contract data needed to monitor contract capacity; lifecycle and commercial changes remain with Administrative Manager.
-3. Project Coordinator operates projects and performs the documented reception, counting, storage assignment, and loan authorization responsibilities.
+3. Project Coordinator operates projects, registers reception, approves counting, suspends problematic deliveries, assigns storage and authorizes loans.
 4. Archive Technician can read project and warehouse context needed for verification, classification, labeling, documentary hierarchy validation, and barcode association. Dedicated write workflow endpoints are not yet implemented.
-5. Archive Assistant can read project and warehouse context needed for physical reception support, storage/movement, and physical loan hand-off/return. Dedicated physical-workflow endpoints are not yet implemented.
+5. Archive Assistant can read project, warehouse and reception context; inspect received material and record physical box/folder counts; physical storage/movement and loan hand-off/return endpoints remain pending.
 6. Digitization Operator can read project context to associate digitization work; warehouse registry and unrelated CRUD are not available. Billing Assistant reads contract/project context only. Their dedicated workflows are not yet implemented.
 7. Project Coordinator receives contract read access only, supporting the documented capacity-monitoring responsibility. Customer Representative remains reserved for the future customer portal; no customer-owned data endpoint is exposed by this API.
 8. All authorization remains deny-by-default. A role's inclusion in the account catalogue does not create access to modules without an explicit policy.
@@ -46,4 +49,4 @@ This document maps approved business responsibilities to API authorization polic
 
 ## Implementation status
 
-The current policies are applied to existing Customer, Contract, Project and Warehouse routes. The documentary and billing rows are deliberately marked "Not exposed yet", rather than granting access to endpoints that do not exist.
+The policies are applied to Customer, Contract, Project, Warehouse and the initial DocumentaryReception workflow. The reception workflow covers delivery registration, inspection, count/discrepancy recording, suspension and coordinator approval. Detailed verification/classification/labeling, item-level inventory and physical location operations remain unexposed until their domain specifications are reconciled. Billing and customer-portal workflows remain pending.
