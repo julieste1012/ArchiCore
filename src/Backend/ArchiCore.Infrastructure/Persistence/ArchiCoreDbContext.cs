@@ -20,6 +20,7 @@ public sealed class ArchiCoreDbContext(DbContextOptions<ArchiCoreDbContext> opti
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<DomainEventAuditEntry> DomainEventAuditEntries => Set<DomainEventAuditEntry>();
+    public DbSet<SecurityAuditEntry> SecurityAuditEntries => Set<SecurityAuditEntry>();
     public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
     public DbSet<RefreshTokenRecord> RefreshTokens => Set<RefreshTokenRecord>();
 
