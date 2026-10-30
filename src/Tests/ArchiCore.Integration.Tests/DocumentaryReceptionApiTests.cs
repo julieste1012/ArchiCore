@@ -70,7 +70,7 @@ public sealed class DocumentaryReceptionApiTests(ApiFixture fixture) : ApiTestBa
         await AssertStatusAsync(HttpStatusCode.Forbidden, assistantApproval);
 
         using var approved = await coordinatorClient.PostAsync(
-            $"/api/receptions/{reception.Id}/counting/approve", null);
+            $"/api/receptions/{reception.Id}/counting/approve", null, TestContext.Current.CancellationToken);
         await AssertStatusAsync(HttpStatusCode.OK, approved);
         var finalReception = await ReadBodyAsync<DocumentaryReceptionResponse>(approved);
         Assert.Equal("Counted", finalReception.Status);
