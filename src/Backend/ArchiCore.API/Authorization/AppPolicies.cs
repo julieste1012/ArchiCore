@@ -36,9 +36,6 @@ public static class AppPolicies
                 AppRoles.SystemAdministrator,
                 AppRoles.AdministrativeManager,
                 AppRoles.ProjectCoordinator,
-                AppRoles.ArchiveTechnician,
-                AppRoles.ArchiveAssistant,
-                AppRoles.DigitizationOperator,
                 AppRoles.BillingAssistant));
 
             options.AddPolicy(ContractsManage, policy => policy.RequireRole(
@@ -49,6 +46,9 @@ public static class AppPolicies
                 AppRoles.SystemAdministrator,
                 AppRoles.AdministrativeManager,
                 AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveTechnician,
+                AppRoles.ArchiveAssistant,
+                AppRoles.DigitizationOperator,
                 AppRoles.BillingAssistant));
 
             options.AddPolicy(ProjectsOperate, policy => policy.RequireRole(
