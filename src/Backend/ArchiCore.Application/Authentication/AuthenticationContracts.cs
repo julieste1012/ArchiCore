@@ -44,8 +44,8 @@ public interface IAuthenticationService
     Task<Result<AuthenticationResponse>> RefreshAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default);
     Task RevokeRefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default);
     Task<Result<UserAccountDto>> GetUserAsync(Guid userId, CancellationToken cancellationToken = default);
-    Task<Result<UserAccountDto>> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default);
+    Task<Result<UserAccountDto>> CreateUserAsync(CreateUserRequest request, Guid actorUserId, string actorRole, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<UserAccountDto>>> ListUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default);
-    Task<Result<UserAccountDto>> SetUserActiveAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
+    Task<Result<UserAccountDto>> SetUserActiveAsync(Guid userId, bool isActive, Guid actorUserId, string actorRole, CancellationToken cancellationToken = default);
     Task<Result> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
 }
