@@ -98,3 +98,12 @@ public sealed record DocumentaryReceptionResponse(
     string? SuspensionReason,
     DateTime CreatedAt,
     DateTime? UpdatedAt);
+
+
+public sealed record BoxResponse(
+    Guid Id,
+    string BoxCode,
+    string? Barcode,
+    string Status,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
