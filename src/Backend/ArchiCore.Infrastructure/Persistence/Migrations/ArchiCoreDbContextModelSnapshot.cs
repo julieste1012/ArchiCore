@@ -104,6 +104,20 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("UserAccounts", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
+                {
+                    b.HasOne("ArchiCore.Domain.Contracts.Contract", null)
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.HasOne("ArchiCore.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
                 {
                     b.Property<Guid>("Id").HasColumnType("uuid");
@@ -117,6 +131,41 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.HasIndex("TokenHash").IsUnique().HasDatabaseName("IX_RefreshTokens_TokenHash");
                     b.HasIndex("UserAccountId").HasDatabaseName("IX_RefreshTokens_UserAccountId");
                     b.ToTable("RefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid");
+                    b.Property<Guid>("ContractId").HasColumnType("uuid");
+                    b.Property<Guid>("CustomerId").HasColumnType("uuid");
+                    b.Property<Guid>("ReceivedByUserId").HasColumnType("uuid");
+                    b.Property<DateTime>("ReceivedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("InitialObservations").HasMaxLength(2000).HasColumnType("character varying(2000)");
+                    b.Property<string>("Status").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)");
+                    b.Property<Guid?>("InspectedByUserId").HasColumnType("uuid");
+                    b.Property<DateTime?>("InspectionCompletedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<bool?>("SafeToAccept").HasColumnType("boolean");
+                    b.Property<string>("InspectionObservations").HasMaxLength(2000).HasColumnType("character varying(2000)");
+                    b.Property<int?>("DeclaredBoxCount").HasColumnType("integer");
+                    b.Property<int?>("DeclaredFolderCount").HasColumnType("integer");
+                    b.Property<int?>("CountedBoxCount").HasColumnType("integer");
+                    b.Property<int?>("CountedFolderCount").HasColumnType("integer");
+                    b.Property<string>("DiscrepancyReport").HasMaxLength(4000).HasColumnType("character varying(4000)");
+                    b.Property<Guid?>("CountedByUserId").HasColumnType("uuid");
+                    b.Property<DateTime?>("CountedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<Guid?>("ApprovedByUserId").HasColumnType("uuid");
+                    b.Property<DateTime?>("ApprovedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<Guid?>("SuspendedByUserId").HasColumnType("uuid");
+                    b.Property<DateTime?>("SuspendedAtUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("SuspensionReason").HasMaxLength(1000).HasColumnType("character varying(1000)");
+                    b.Property<DateTime>("CreatedAt").HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("UpdatedAt").HasColumnType("timestamp with time zone");
+                    b.HasKey("Id");
+                    b.HasIndex("ContractId", "ReceivedAtUtc").HasDatabaseName("IX_DocumentaryReceptions_ContractId_ReceivedAtUtc");
+                    b.HasIndex("Status").HasDatabaseName("IX_DocumentaryReceptions_Status");
+                    b.HasIndex("ReceivedAtUtc").HasDatabaseName("IX_DocumentaryReceptions_ReceivedAtUtc");
+                    b.HasIndex("CustomerId");
+                    b.ToTable("DocumentaryReceptions", (string)null);
                 });
 
             modelBuilder.Entity("ArchiCore.Domain.Contracts.Contract", b =>
