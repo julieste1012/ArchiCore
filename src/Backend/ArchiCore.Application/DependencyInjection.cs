@@ -1,5 +1,5 @@
 using ArchiCore.Application.Audit;
-using ArchiCore.Application.DocumentaryReception;
+using ArchiCore.Application.Receptions;
 using ArchiCore.Application.Contracts;
 using ArchiCore.Application.Customers;
 using ArchiCore.Application.Projects;
