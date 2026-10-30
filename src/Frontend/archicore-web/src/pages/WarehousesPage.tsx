@@ -15,7 +15,9 @@ const warehouseLifecycleActions: LifecycleActionSpec[] = [
   { fromStatus: 'Closed', endpoint: 'archive', label: 'Archivar', successStatus: 'Archivada', confirmationMessage: '¿Archivar esta bodega? Esta acción cambia su estado de forma permanente.' },
 ];
 
-type WarehousesPageProps = { canManage?: boolean };\n\nexport function WarehousesPage({ canManage = true }: WarehousesPageProps) {
+type WarehousesPageProps = { canManage?: boolean };
+
+export function WarehousesPage({ canManage = true }: WarehousesPageProps) {
   const [data, setData] = useState<PagedResult<Warehouse> | null>(null);
   const [busy, setBusy] = useState(true);
   const [saving, setSaving] = useState(false);
