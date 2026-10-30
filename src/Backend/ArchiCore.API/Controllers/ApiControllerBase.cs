@@ -21,6 +21,7 @@ public abstract class ApiControllerBase : ControllerBase
         "Reception.NotFound",
         "Reception.ContractNotFound",
         "Reception.CustomerNotFound",
+        "Box.NotFound",
         "Authentication.UserNotFound",
     };
 
@@ -53,6 +54,10 @@ public abstract class ApiControllerBase : ControllerBase
         "Project.InvalidClose",
         "Project.InvalidArchival",
         "Warehouse.DuplicateCode",
+        "Box.DuplicateCode",
+        "Box.DuplicateBarcode",
+        "Box.BarcodeAlreadyAssigned",
+        "Box.InvalidBarcodeAssignment",
         "Warehouse.InvalidActivation",
         "Warehouse.InvalidMaintenance",
         "Warehouse.InvalidClose",
