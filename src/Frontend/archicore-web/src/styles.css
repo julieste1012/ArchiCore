@@ -487,3 +487,75 @@ td:first-child { min-width: 180px; }
   .reception-detail-summary { flex-direction: column; }
   .reception-detail-summary p { max-width: none; }
 }
+
+
+/* Box inventory and barcode assignment */
+.box-create-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+}
+.box-create-form label {
+  display: block;
+  color: #34463d;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.box-create-form input,
+.box-barcode-form input {
+  width: 100%;
+  height: 41px;
+  min-width: 0;
+  padding: 0 11px;
+  border: 1px solid #dfe7e1;
+  background: #fcfdfc;
+  color: #1b2c24;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 11px;
+}
+.box-create-form small {
+  display: block;
+  margin-top: 7px;
+  color: #8a968e;
+  font-size: 10px;
+}
+.box-barcode-value,
+.box-assigned-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #435b4c;
+  font-size: 11px;
+  font-weight: 600;
+}
+.box-barcode-value svg,
+.box-assigned-label svg { color: #659579; }
+.box-barcode-form {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 220px;
+}
+.box-barcode-form input { max-width: 180px; }
+.box-module-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid #e9eee9;
+  border-radius: 10px;
+  color: #7f8b83;
+  background: #fbfcfb;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.box-module-footnote svg { flex: 0 0 auto; color: #8e9b92; }
+@media (max-width: 620px) {
+  .box-create-form { grid-template-columns: minmax(0, 1fr); }
+  .box-barcode-form { min-width: 180px; }
+  .box-barcode-form input { max-width: none; }
+}
