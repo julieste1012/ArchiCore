@@ -4,7 +4,7 @@ using ArchiCore.Domain.Common;
 using ArchiCore.Domain.Contracts;
 using ArchiCore.Domain.DocumentaryReception;
 
-namespace ArchiCore.Application.DocumentaryReception;
+namespace ArchiCore.Application.Receptions;
 
 public sealed class DocumentaryReceptionService(
     IDocumentaryReceptionRepository receptions,
