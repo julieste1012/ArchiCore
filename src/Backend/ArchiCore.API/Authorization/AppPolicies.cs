@@ -35,6 +35,7 @@ public static class AppPolicies
             options.AddPolicy(ContractsRead, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator,
                 AppRoles.AdministrativeManager,
+                AppRoles.ProjectCoordinator,
                 AppRoles.BillingAssistant));
 
             options.AddPolicy(ContractsManage, policy => policy.RequireRole(
