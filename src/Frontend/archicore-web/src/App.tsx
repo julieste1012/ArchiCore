@@ -24,6 +24,17 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
   { id: 'password', label: 'Mi contraseña', icon: KeyRound, section: 'MI CUENTA' },
 ];
 
+const roleViewAccess: Record<string, ViewKey[]> = {
+  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'users', 'audit', 'password'],
+  AdministrativeManager: ['dashboard', 'customers', 'contracts', 'projects', 'password'],
+  ProjectCoordinator: ['dashboard', 'projects', 'warehouses', 'password'],
+  ArchiveTechnician: ['dashboard', 'password'],
+  ArchiveAssistant: ['dashboard', 'warehouses', 'password'],
+  DigitizationOperator: ['dashboard', 'password'],
+  BillingAssistant: ['dashboard', 'contracts', 'projects', 'password'],
+  CustomerRepresentative: ['dashboard', 'password'],
+};
+
 const pageNames: Record<ViewKey, string> = {
   dashboard: 'Panel general',
   customers: 'Clientes',
@@ -41,24 +52,14 @@ export function App() {
 
   if (!user) return <LoginPage />;
 
-  if (user.role !== 'SystemAdministrator') {
-    return (
-      <main className="access-pending-screen">
-        <div className="access-pending-card">
-          <span className="brand-mark"><ShieldCheck size={25} /></span>
-          <p className="eyebrow">CUENTA AUTENTICADA</p>
-          <h1>Estamos preparando tu espacio.</h1>
-          <p>Tu cuenta está activa con el rol <strong>{user.role}</strong>. La matriz de permisos de cada módulo está pendiente de aprobación, por lo que las pantallas operativas permanecen temporalmente restringidas.</p>
-          <ChangePasswordForm compact onComplete={() => void logout()} />
-          <button className="primary-button" onClick={() => void logout()}><LogOut size={16} /> Cerrar sesión</button>
-        </div>
-      </main>
-    );
-  }
+
+  const allowedViews = roleViewAccess[user.role] ?? ['dashboard', 'password'];
+  const activeView = allowedViews.includes(view) ? view : 'dashboard';
+  const visibleNavItems = navItems.filter((item) => allowedViews.includes(item.id));
 
   const initials = user.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
   const viewContent = (() => {
-    switch (view) {
+    switch (activeView) {
       case 'customers': return <CustomersPage />;
       case 'contracts': return <ContractsPage />;
       case 'projects': return <ProjectsPage />;
@@ -66,11 +67,11 @@ export function App() {
       case 'users': return <UsersPage />;
       case 'audit': return <AuditPage />;
       case 'password': return <ChangePasswordForm onComplete={() => void logout()} />;
-      default: return <DashboardPage onNavigate={setView} />;
+      default: return <DashboardPage onNavigate={setView} role={user.role} />;
     }
   })();
 
-  const orderedItems = navItems.filter((item, index, all) => all.findIndex((candidate) => candidate.section === item.section) === index);
+  const orderedItems = visibleNavItems.filter((item, index, all) => all.findIndex((candidate) => candidate.section === item.section) === index);
 
   return (
     <div className="app-shell">
@@ -81,8 +82,8 @@ export function App() {
           {orderedItems.map((group) => (
             <div className="nav-group" key={group.section}>
               <p className="nav-section-label">{group.section}</p>
-              {navItems.filter((item) => item.section === group.section).map(({ id, label, icon: Icon }) => (
-                <button key={id} className={`nav-item ${view === id ? 'nav-item-active' : ''}`} onClick={() => setView(id)}>
+              {visibleNavItems.filter((item) => item.section === group.section).map(({ id, label, icon: Icon }) => (
+                <button key={id} className={`nav-item ${activeView === id ? 'nav-item-active' : ''}`} onClick={() => setView(id)}>
                   <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{view === id && <span className="nav-active-dot" />}
                 </button>
               ))}
@@ -91,12 +92,12 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="side-help-card"><span className="help-symbol"><ShieldCheck size={18} /></span><div><strong>Sesión protegida</strong><small>Acceso por roles</small></div><Activity size={15} /></div>
-          <button className={`nav-item nav-settings ${view === 'users' ? 'nav-item-active' : ''}`} onClick={() => setView('users')}><Settings2 size={18} /><span>Administrar usuarios</span></button>
+          {user.role === 'SystemAdministrator' && <button className={`nav-item nav-settings ${view === 'users' ? 'nav-item-active' : ''}`} onClick={() => setView('users')}><Settings2 size={18} /><span>Administrar usuarios</span></button>}
           <div className="sidebar-user"><span className="user-avatar">{initials || 'AC'}</span><span className="user-details"><strong>{user.displayName}</strong><small>{user.role}</small></span><button className="icon-button logout-button" title="Cerrar sesión" aria-label="Cerrar sesión" onClick={() => void logout()}><LogOut size={17} /></button></div>
         </div>
       </aside>
       <main className="main-area">
-        <header className="topbar"><div className="breadcrumb"><span>ArchiCore</span><span className="breadcrumb-slash">/</span><strong>{pageNames[view]}</strong></div><div className="topbar-actions"><span className="topbar-date">{new Date().toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</span><button className={`icon-button notification-button ${view === 'audit' ? 'nav-item-active' : ''}`} title="Abrir auditoría" aria-label="Abrir auditoría" onClick={() => setView('audit')}><Bell size={18} /><span /></button><span className="topbar-divider" /><div className="topbar-user"><span className="user-avatar small-avatar">{initials || 'AC'}</span><span><strong>{user.displayName}</strong><small>{user.role}</small></span></div></div></header>
+        <header className="topbar"><div className="breadcrumb"><span>ArchiCore</span><span className="breadcrumb-slash">/</span><strong>{pageNames[activeView]}</strong></div><div className="topbar-actions"><span className="topbar-date">{new Date().toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</span>{user.role === 'SystemAdministrator' && <button className={`icon-button notification-button ${view === 'audit' ? 'nav-item-active' : ''}`} title="Abrir auditoría" aria-label="Abrir auditoría" onClick={() => setView('audit')}><Bell size={18} /><span /></button>}<span className="topbar-divider" /><div className="topbar-user"><span className="user-avatar small-avatar">{initials || 'AC'}</span><span><strong>{user.displayName}</strong><small>{user.role}</small></span></div></div></header>
         <div className="page-content">{viewContent}</div>
         <footer className="app-footer"><span>ArchiCore ERP <span className="footer-separator">·</span> Núcleo operativo</span><span><span className="live-dot" /> API conectada <span className="footer-separator">·</span> v0.1.0</span></footer>
       </main>
