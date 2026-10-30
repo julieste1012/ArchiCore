@@ -70,3 +70,31 @@ public sealed record ProjectResponse(
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     IReadOnlyList<WarehouseAssignmentResponse> WarehouseAssignments);
+
+
+public sealed record DocumentaryReceptionResponse(
+    Guid Id,
+    Guid ContractId,
+    Guid CustomerId,
+    Guid ReceivedByUserId,
+    DateTime ReceivedAtUtc,
+    string? InitialObservations,
+    string Status,
+    Guid? InspectedByUserId,
+    DateTime? InspectionCompletedAtUtc,
+    bool? SafeToAccept,
+    string? InspectionObservations,
+    int? DeclaredBoxCount,
+    int? DeclaredFolderCount,
+    int? CountedBoxCount,
+    int? CountedFolderCount,
+    string? DiscrepancyReport,
+    Guid? CountedByUserId,
+    DateTime? CountedAtUtc,
+    Guid? ApprovedByUserId,
+    DateTime? ApprovedAtUtc,
+    Guid? SuspendedByUserId,
+    DateTime? SuspendedAtUtc,
+    string? SuspensionReason,
+    DateTime CreatedAt,
+    DateTime? UpdatedAt);
