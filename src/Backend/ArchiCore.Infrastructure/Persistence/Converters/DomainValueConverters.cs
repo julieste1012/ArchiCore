@@ -21,10 +21,18 @@ internal static class DomainValueConverters
     public static readonly ValueConverter<WarehouseCode, string> WarehouseCodeConverter =
         new(value => value.Value, value => ToWarehouseCode(value));
 
+    public static readonly ValueConverter<BoxCode, string> BoxCodeConverter =
+        new(value => value.Value, value => ToBoxCode(value));
+
+    public static readonly ValueConverter<Barcode, string> BarcodeConverter =
+        new(value => value.Value, value => ToBarcode(value));
+
     private static Nit ToNit(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.Nit.Create(value), "NIT");
     private static ContractNumber ToContractNumber(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.ContractNumber.Create(value), "ContractNumber");
     private static ProjectCode ToProjectCode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.ProjectCode.Create(value), "ProjectCode");
     private static WarehouseCode ToWarehouseCode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.WarehouseCode.Create(value), "WarehouseCode");
+    private static BoxCode ToBoxCode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.BoxCode.Create(value), "BoxCode");
+    private static Barcode ToBarcode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.Barcode.Create(value), "Barcode");
 
     private static TValue EnsureValid<TValue>(ArchiCore.Domain.Common.Result<TValue> result, string name)
         => result.IsSuccess
