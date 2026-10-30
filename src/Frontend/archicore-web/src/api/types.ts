@@ -148,3 +148,15 @@ export type DocumentaryReception = {
   createdAt: string;
   updatedAt: string | null;
 };
+
+
+export type BoxStatus = 'Created' | 'Available' | 'InStorage' | 'InTransit' | 'LoanProcess' | 'Returned' | 'Archived';
+
+export type Box = {
+  id: string;
+  boxCode: string;
+  barcode: string | null;
+  status: BoxStatus;
+  createdAt: string;
+  updatedAt: string | null;
+};
