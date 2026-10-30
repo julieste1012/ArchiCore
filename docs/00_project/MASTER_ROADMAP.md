@@ -22,8 +22,9 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [ ] Complete and approve all business processes (BP-003 through BP-014 remain pending in the process index)
 - [ ] Resolve contract/project cardinality discrepancy
 - [ ] Confirm customer identity/contact details and documentary metadata
-- [ ] Approve endpoint permissions by business role
-- [ ] Finalize actor-level audit, retention and security requirements
+- [x] Map approved business-role responsibilities to endpoint authorization policies
+- [x] Implement actor-aware authentication/account security audit
+- [ ] Finalize audit retention, credential recovery, rate limiting and incident-response requirements
 - [ ] Close and approve the documented domain decisions before designing documentary schema or APIs
 
 ## Phase 2 — Domain ⚠️ Partial implementation
@@ -43,7 +44,8 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] Paged list queries and basic request validation
 - [x] Domain-event audit query service
 - [ ] General validation pipeline and application use cases for approved documentary workflows
-- [ ] Application-level use cases for security/administration audit
+- [x] Actor-aware security audit query service
+- [ ] Application-level use cases for approved documentary workflows
 
 ## Phase 4 — Infrastructure ✅ Core persistence/security/audit; object storage pending
 - [x] EF Core configuration and PostgreSQL mappings for four core modules
@@ -53,7 +55,8 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] Transactional Outbox, row-lock coordinated worker and durable domain-event audit projection
 - [x] Provider-neutral object storage abstraction with key validation and filesystem/MinIO-SDK adapters
 - [ ] Select and validate a supported production S3-compatible service, bucket policy and object authorization
-- [ ] Actor-level security audit, outbox retention/poison-message handling and operational metrics
+- [x] Separate durable security audit for login/refresh/logout, password change and account lifecycle actions
+- [ ] Security audit retention/cleanup, outbox retry/poison-message handling and operational metrics
 
 ## Phase 5 — API ✅ Core endpoints/security implemented; permissions and workflows pending
 - [x] Dependency injection and API wiring
@@ -62,7 +65,9 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] Administrator-only paginated domain-event audit endpoint
 - [x] Standard validation/error responses and health endpoints
 - [x] Backend integration tests using PostgreSQL Testcontainers
-- [ ] Final per-role authorization policy matrix and credential recovery/reset flow
+- [x] Role-specific authorization policies for existing core endpoints, derived from approved BusinessRoles responsibilities
+- [x] Administrator-only security audit endpoint
+- [ ] Credential recovery/reset and approved policies for new documentary workflows
 - [x] Authenticated self-service password change with session revocation
 - [ ] APIs for approved archive/folder/box/document/folio/loan workflows
 - [ ] OpenAPI contract review for all endpoint request/response models
@@ -81,6 +86,7 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] Automated restore/build/test on pull requests
 - [x] PostgreSQL/API integration suite and migration smoke coverage
 - [x] Authentication/refresh-token and role-boundary tests
+- [x] Actor attribution and access-control tests for security audit
 - [x] Domain-event outbox/audit transaction and API tests
 - [ ] Application unit tests for all use cases
 - [ ] Architecture/dependency-boundary tests
@@ -106,10 +112,12 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] Project warehouse assignment/release UI with assignment history
 - [x] Contract finish action with an explicit finish date
 - [x] Administrator user management and domain-event audit viewer
+- [x] Role-specific navigation and read-only project/warehouse context screens
+- [x] Administrator security-audit viewer
 - [x] Self-service password change for authenticated users
 - [x] CI typecheck and production build
 - [ ] Edit/detail screens and broader form validation
-- [ ] Approved role-aware navigation/actions
+- [x] Role-aware navigation/actions for existing core API permissions
 - [ ] Documentary modules, actor-aware audit improvements and approved role-specific module views
 - [ ] Frontend component tests and end-to-end workflows against a clean deployment
 
