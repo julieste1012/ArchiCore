@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IWarehouseRepository, WarehouseRepository>();
         services.AddScoped<IDomainEventAuditRepository, DomainEventAuditRepository>();
+        services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
         services.AddSingleton<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<BootstrapAdminSeeder>();
