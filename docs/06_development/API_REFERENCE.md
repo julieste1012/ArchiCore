@@ -8,7 +8,7 @@ Status: working contract for the current `feat/backend-core-api` branch. This re
 - Send `Authorization: Bearer <accessToken>` to authenticated endpoints.
 - Access tokens are short-lived. The frontend keeps the session in memory, rotates refresh tokens on demand, and logs the user out when refresh fails.
 - The bootstrap administrator is created only when the documented environment configuration is enabled. Never commit signing keys or bootstrap credentials.
-- Until the business permission matrix is approved, core operational endpoints, user administration and the event-audit endpoint are restricted to the `SystemAdministrator` role.
+- Operational access follows the approved responsibility mapping in [ROLE_PERMISSION_MATRIX.md](ROLE_PERMISSION_MATRIX.md). Administrative account management and both audit streams remain restricted to `SystemAdministrator`.
 - In Development, the OpenAPI document is exposed by ASP.NET Core at `/openapi/v1.json`.
 
 ## Response and paging conventions
@@ -55,7 +55,7 @@ Supported role identifiers currently defined by the application are `SystemAdmin
 
 ## Customers
 
-All customer routes require SystemAdministrator.
+Customer read/create/lifecycle operations require `SystemAdministrator` or `AdministrativeManager`.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -76,7 +76,7 @@ The current Customer model stores NIT, status and contract references. Legal nam
 
 ## Contracts
 
-All contract routes require SystemAdministrator.
+Contract reads are available to `SystemAdministrator`, `AdministrativeManager`, `ProjectCoordinator` and `BillingAssistant`. Create and lifecycle operations require `SystemAdministrator` or `AdministrativeManager`.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -109,7 +109,7 @@ The finish endpoint only changes the contract lifecycle. It does not currently e
 
 ## Projects and warehouse assignments
 
-All project routes require SystemAdministrator.
+Project reads are available to `SystemAdministrator`, `AdministrativeManager`, `ProjectCoordinator`, `ArchiveTechnician`, `ArchiveAssistant`, `DigitizationOperator` and `BillingAssistant`. Project creation/lifecycle and warehouse assignment require `SystemAdministrator` or `ProjectCoordinator`.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -157,7 +157,7 @@ The project API records a project-to-warehouse assignment only. Physical aisles,
 
 ## Warehouses
 
-All warehouse routes require SystemAdministrator.
+Warehouse reads are available to `SystemAdministrator`, `ProjectCoordinator`, `ArchiveTechnician` and `ArchiveAssistant`. Warehouse creation and lifecycle administration remain restricted to `SystemAdministrator` until the dedicated physical-location operations are implemented.
 
 | Method | Route | Purpose |
 |---|---|---|
@@ -185,6 +185,28 @@ Requires SystemAdministrator.
 `GET /api/audit/domain-events?page=1&pageSize=20&eventType={fullTypeName}&fromUtc={ISO-8601}&toUtc={ISO-8601}`
 
 All query filters are optional. Results contain event ID, type, occurrence time, record time and JSON payload. The transactional outbox captures domain events and the hosted processor projects them into this immutable technical audit table. This is not yet a complete actor-level security/business audit because current domain events do not consistently identify the authenticated user.
+
+## Security audit
+
+Requires `SystemAdministrator`.
+
+`GET /api/audit/security-events?page=1&pageSize=20&action={action}&outcome={Succeeded|Failed}&fromUtc={ISO-8601}&toUtc={ISO-8601}`
+
+Filters are optional. Each record returns the action, result, UTC timestamp, actor account/role and target account/role when available. The stream records login outcomes, refresh outcomes, logout, user creation, activation/deactivation and password changes. Unknown-account login failures do not store the submitted email. Passwords, access tokens and refresh tokens are never written to this audit table.
+
+This endpoint is deliberately separate from `/api/audit/domain-events`: domain-event audit stores business event payloads, while security audit records authenticated actor attribution and authentication/account-security outcomes. Both endpoints are administrator-only. Retention, privacy review and security-event alerting remain operational release requirements.
+
+## Authorization policy summary
+
+| Resource | Read | Write / lifecycle |
+|---|---|---|
+| Customers | SystemAdministrator, AdministrativeManager | SystemAdministrator, AdministrativeManager |
+| Contracts | SystemAdministrator, AdministrativeManager, ProjectCoordinator, BillingAssistant | SystemAdministrator, AdministrativeManager |
+| Projects | SystemAdministrator, AdministrativeManager, ProjectCoordinator, ArchiveTechnician, ArchiveAssistant, DigitizationOperator, BillingAssistant | SystemAdministrator, ProjectCoordinator |
+| Warehouses | SystemAdministrator, ProjectCoordinator, ArchiveTechnician, ArchiveAssistant | SystemAdministrator |
+| Users and audit | SystemAdministrator | SystemAdministrator |
+
+The customer portal role is reserved for a future tenant-scoped portal. It has no access to internal records in the current API. Documentary technicians, assistants, digitization operators and billing staff receive only the read context needed for their approved duties until their specific workflows are implemented.
 
 ## Health and infrastructure
 
