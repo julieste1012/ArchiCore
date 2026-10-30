@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using ArchiCore.API.Authorization;
-using ArchiCore.Application.DocumentaryReception;
+using ArchiCore.Application.Receptions;
 using ArchiCore.Domain.DocumentaryReception;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
