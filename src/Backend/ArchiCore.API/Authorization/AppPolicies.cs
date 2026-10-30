@@ -19,6 +19,11 @@ public static class AppPolicies
     public const string ProjectsAssignWarehouses = "Projects.AssignWarehouses";
     public const string WarehousesRead = "Warehouses.Read";
     public const string WarehousesManage = "Warehouses.Manage";
+    public const string ReceptionsRead = "Receptions.Read";
+    public const string ReceptionsReceive = "Receptions.Receive";
+    public const string ReceptionsInspect = "Receptions.Inspect";
+    public const string ReceptionsCount = "Receptions.Count";
+    public const string ReceptionsApprove = "Receptions.Approve";
 
     public static IServiceCollection AddArchiCoreAuthorization(this IServiceCollection services)
     {
@@ -70,6 +75,30 @@ public static class AppPolicies
             // dedicated endpoints for the ArchiveAssistant role in the storage module.
             options.AddPolicy(WarehousesManage, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator));
+
+            options.AddPolicy(ReceptionsRead, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveTechnician,
+                AppRoles.ArchiveAssistant));
+
+            options.AddPolicy(ReceptionsReceive, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ProjectCoordinator));
+
+            options.AddPolicy(ReceptionsInspect, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveAssistant));
+
+            options.AddPolicy(ReceptionsCount, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveAssistant));
+
+            options.AddPolicy(ReceptionsApprove, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ProjectCoordinator));
         });
 
         return services;
