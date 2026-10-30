@@ -105,3 +105,15 @@ export type ApiProblem = {
   status?: number;
   code?: string;
 };
+
+
+export type SecurityAuditEntry = {
+  id: string;
+  occurredOnUtc: string;
+  action: string;
+  outcome: string;
+  actorUserId: string | null;
+  actorRole: string | null;
+  targetUserId: string | null;
+  targetRole: string | null;
+};
