@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json.Serialization;
 using ArchiCore.Application;
 using ArchiCore.Application.Authentication;
+using ArchiCore.API.Authorization;
 using ArchiCore.Infrastructure;
 using ArchiCore.Infrastructure.Persistence;
 using ArchiCore.Infrastructure.Security;
@@ -124,7 +125,7 @@ builder.Services
             }
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddArchiCoreAuthorization();
 builder.Services.AddOpenApi();
 
 if (!builder.Environment.IsEnvironment("Testing") &&
