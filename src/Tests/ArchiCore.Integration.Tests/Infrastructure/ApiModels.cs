@@ -5,6 +5,16 @@ namespace ArchiCore.Integration.Tests.Infrastructure;
 
 public sealed record DomainEventAuditResponse(Guid Id, string EventType, DateTime OccurredOnUtc, DateTime RecordedAtUtc, string Payload);
 
+public sealed record SecurityAuditResponse(
+    Guid Id,
+    DateTime OccurredOnUtc,
+    string Action,
+    string Outcome,
+    Guid? ActorUserId,
+    string? ActorRole,
+    Guid? TargetUserId,
+    string? TargetRole);
+
 public sealed record HealthResponse(string Status, string? Database);
 
 public sealed record ProblemResponse(string? Title, int? Status, string? Detail, string? Code);
