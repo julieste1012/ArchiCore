@@ -3,12 +3,12 @@
 | Field | Value |
 |---|---|
 | Project | ArchiCore ERP |
-| Last audit | 2026-10-29 |
+| Last audit | 2026-10-30 |
 | Stable branch | `main` |
 | Integration target | `develop` |
 | Active implementation branch | `feat/backend-core-api` (PR #7, not yet merged) |
-| Current phase | Core API, role-based authorization, actor-aware security audit, operational React slice and local container stack are CI-validated |
-| Next critical work | Approve documentary domain boundaries and per-role permissions; then implement document metadata, physical locations and prioritized end-to-end business workflows |
+| Current phase | Core API, role-based authorization, separate security audit, BP-001/BP-002 reception-counting slice and role-aware React screens implemented on the active feature branch; latest changes awaiting CI |
+| Next critical work | Validate the new reception/security-audit changes in CI; then implement approved verification/classification/labeling and resolve documentary hierarchy plus WarehouseLocation before item-level inventory and loans |
 
 > A passing test suite validates the implemented slice, not the completeness of the ERP. This document distinguishes completed infrastructure from business workflows that still lack approved specifications.
 
@@ -38,7 +38,7 @@ The current backend/security/frontend work described below is on the active feat
 - Authenticated self-service password change verifies the current password, enforces the password policy, requires the new value to differ, increments token version and revokes existing refresh sessions. Old access tokens are invalidated; the user must sign in again.
 - Administrator-only paginated user listing, account creation, account activation/deactivation, including token/session revocation. The last active SystemAdministrator cannot be deactivated, and an administrator cannot deactivate their own account.
 - Bootstrap administrator creation is opt-in via environment configuration. No signing key or bootstrap password is committed to source control.
-- Existing operational controllers apply role-specific policies derived from the approved responsibility matrix in `02_BusinessRoles.md`. AdministrativeManager manages customers/contracts; ProjectCoordinator operates projects and assigns/releases warehouses; ArchiveTechnician, ArchiveAssistant and DigitizationOperator receive read-only project/storage context; BillingAssistant receives contract/project read context. User administration and both audit streams remain SystemAdministrator-only. CustomerRepresentative is reserved for a future tenant-scoped portal.
+- Existing operational controllers apply role-specific policies derived from the approved responsibility matrix in `02_BusinessRoles.md`. AdministrativeManager manages customers/contracts; ProjectCoordinator operates projects, registers receptions and approves counting; ArchiveTechnician, ArchiveAssistant and DigitizationOperator receive only the project/storage context required by their approved work; ArchiveAssistant can inspect and count receptions; BillingAssistant receives contract/project read context. User administration and both audit streams remain SystemAdministrator-only. CustomerRepresentative is reserved for a future tenant-scoped portal.
 - This is a technical authentication boundary, not the full personnel/User domain module. MFA, password reset/recovery, login/security-event auditing, distributed rate limiting, and a final role/endpoint permission matrix remain future work.
 
 ### Object storage
@@ -51,14 +51,14 @@ The current backend/security/frontend work described below is on the active feat
 - `ArchiCoreDbContext.SaveChanges/SaveChangesAsync` persists domain events to `OutboxMessages` in the same transaction as aggregate updates, and clears the in-memory events only after successful saving.
 - A hosted worker processes pending rows outside the Testing environment. PostgreSQL `FOR UPDATE SKIP LOCKED` coordinates multiple instances. Audit projection and marking the outbox row processed commit in the same transaction; failed batches remain pending and are retried on a later poll.
 - `DomainEventAuditEntries` stores an immutable payload copy. `GET /api/audit/domain-events` is administrator-only and supports event-type/date filters and pagination.
-- This is durable *domain-event* auditing. It is not yet a complete actor-level security audit: events do not consistently include the authenticated actor, and user login/refresh/logout actions are not recorded in a separate security-audit stream. There is no retry counter, poison-message quarantine or retention/cleanup policy yet.
+- A separate SecurityAuditEntries stream now records login/refresh/logout outcomes, account creation/activation/deactivation and password changes with actor/target account IDs and roles where available. Passwords and tokens are never stored. This is not yet a complete actor-level audit of every business operation: reception records carry their actor IDs/timestamps and domain events, but a unified actor-attributed business audit stream, retention/cleanup, retry counters and poison-message quarantine remain future hardening work.
 
 ### Initial frontend
 - First slice lives in `src/Frontend/archicore-web`: React, TypeScript and Vite; login/session flow; API-backed dashboard; and list/create screens for customers, contracts, projects and warehouses.
-- The customer, contract, project and warehouse screens expose guarded lifecycle operations already implemented in the backend. They handle loading/error/success feedback and ask for confirmation before consequential transitions.
+- The customer, contract, project and warehouse screens expose guarded lifecycle operations already implemented in the backend. The new Recepciones screen connects BP-001/BP-002 creation, inspection, count/discrepancy capture, suspension and approval to the API. They handle loading/error/success feedback and ask for confirmation before consequential transitions.
 - Project management supports assigning and releasing warehouses and displays assignment history. Counts show active assignments rather than historic rows.
 - Contract management can finish an active contract using an explicit date. The UI warns that recording `Finished` does not replace documentary return, pending-loan resolution, billing and archive closure.
-- SystemAdministrator can list/create/deactivate/reactivate accounts, view domain-event audit and view actor-aware security audit. AdministrativeManager can manage customers and contracts. ProjectCoordinator can operate projects and assign/release warehouses. ArchiveTechnician, ArchiveAssistant and DigitizationOperator receive read-only operational context matching their responsibilities; BillingAssistant can read contracts/projects. All authenticated roles can change their own password.
+- SystemAdministrator can list/create/deactivate/reactivate accounts, view domain-event audit and view actor-aware security audit. AdministrativeManager can manage customers and contracts. ProjectCoordinator can operate projects, assign/release warehouses, register receptions, suspend deliveries and approve counts. ArchiveAssistant can inspect receptions and record counts; ArchiveTechnician can consult reception records. BillingAssistant can read contracts/projects; DigitizationOperator receives read-only project context. All authenticated roles can change their own password.
 - API calls use the shared client, which handles access-token refresh with single-flight coordination. Session and tokens stay in browser memory; a full page reload requires a new login. Do not replace this with localStorage token persistence as a shortcut.
 - [API_REFERENCE.md](../06_development/API_REFERENCE.md) records current routes, request bodies, status codes, role constraints and explicit non-implemented areas. [ROLE_PERMISSION_MATRIX.md](../06_development/ROLE_PERMISSION_MATRIX.md) records the role-to-policy mapping.
 - Frontend CI typechecks and produces a production build. Component tests, end-to-end release validation, detail/edit screens and approved non-admin operational views remain pending.
@@ -73,7 +73,7 @@ The current backend/security/frontend work described below is on the active feat
 ### Automated validation
 - Domain/model test project: 38 tests, including the EF model test that generates PostgreSQL DDL.
 - Integration suite uses `WebApplicationFactory<Program>` and an isolated PostgreSQL 17 Testcontainers database. It applies the real migrations and does not use the developer's Docker Compose volume.
-- Coverage includes core API flows and associations; HTTP 404/409/422 error mapping; lifecycle transitions; object-storage safety and size checks; JWT authentication and role boundaries; refresh-token rotation/replay/concurrency; password change and token revocation; user administration; outbox persistence/rollback; audit projection; and database isolation.
+- Coverage includes core API flows and associations; HTTP 404/409/422 error mapping; lifecycle transitions; object-storage safety and size checks; JWT authentication and role boundaries; refresh-token rotation/replay/concurrency; password change and token revocation; user administration; role-policy checks; security audit actor attribution; reception inspection/count/approval rules; outbox persistence/rollback; audit projection; and database isolation.
 - Latest backend CI: [96 passed, 0 failed, 0 skipped](https://github.com/julieste1012/ArchiCore/actions/runs/40970011472) (38 domain/model + 58 integration). Restore and Release build succeeded without warnings.
 - Latest frontend CI on the current code head: [typecheck and production build succeeded](https://github.com/julieste1012/ArchiCore/actions/runs/40970011343).
 - Full-stack container smoke on the current code head: [images built, migrations applied, health checks passed and administrator login verified](https://github.com/julieste1012/ArchiCore/actions/runs/40970011357).
@@ -90,7 +90,7 @@ Do not implement documentary persistence based on contradictory draft documents.
 5. **Contract cancellation/event catalog:** `ContractStatus` contains Cancelled, but no `Cancel()` transition exists and event names differ between documents.
 6. **Customer profile:** Customer currently stores NIT/status/contract references. The business specification leaves legal name, identity and contact fields open.
 7. **Lifecycle gaps:** some Box/Warehouse states and catalogued events are not fully reachable or emitted by current domain methods.
-8. **Business processes:** BP-001 and BP-002 are written as initial workflows, but their operational API/use-case coverage is not complete; BP-003 to BP-014 remain pending in the index.
+8. **Business processes:** BP-001/BP-002 now have an initial operational API slice for reception registration, physical inspection, box/folder counting, discrepancy reporting, suspension and coordinator approval. Scheduled-delivery validation, physical-capacity reservation, item-level inventory and formal business acceptance remain pending; BP-003 to BP-014 remain pending in the process index.
 9. **Security and audit requirements:** role-specific access is implemented from the approved business responsibility matrix, and actor-aware authentication/account audit is implemented. Credential recovery, MFA, distributed rate limiting, audit retention, privacy review and incident-response policy remain release work.
 10. **Object storage:** the provider abstraction and development filesystem/MinIO-SDK adapters now exist; selecting and validating a supported production storage service and approving file metadata/lifecycle remain pending.
 
@@ -98,12 +98,12 @@ The project collaboration protocol prohibits silently inventing business rules. 
 
 ## 4. Next implementation sequence
 
-1. **Review/release the core slice:** verify current backend/frontend CI, review the diff and perform local browser/API smoke tests before merging PR #7.
+1. **Review/release the current feature slice:** verify backend/frontend/container CI for the latest actor-audit and reception commits, review the diff and perform local browser/API smoke tests before merging PR #7.
 2. **Approve domain boundaries:** document decisions for Archive/Folder/Box/Document/Folio/Loan, WarehouseLocation, contract/project cardinality, lifecycle transitions and the Customer profile.
 3. **Extend authorization with business modules:** apply the existing role policies to newly implemented documentary, loan, digitization and billing endpoints; retain deny-by-default and tenant isolation for CustomerRepresentative.
 4. **Finish security/audit policy:** add credential recovery/reset, MFA decision, distributed rate limiting, outbox retry/poison-message policy, retention/cleanup, monitoring and deployment secrets guidance. Actor-aware security audit is now implemented for authentication and account lifecycle actions.
 5. **Documentary metadata and APIs:** after decisions are approved, design the metadata, object lifecycle, physical location and public upload/download contracts. Select a supported production S3-compatible provider and validate bucket/access policies.
-6. **Business workflows:** implement BP-001/BP-002 end-to-end and then approved verification/classification/labeling, search, loans/returns, digitization, billing and contract closure.
+6. **Business workflows:** complete BP-001/BP-002 acceptance by adding scheduled-delivery and physical-capacity checks after WarehouseLocation is approved; then implement verification/classification/labeling, item-level inventory/search, loans/returns, digitization, billing and contract closure.
 7. **Frontend completion:** add details/edit flows, form validation polish, role-specific modules after approval, component tests and API-backed E2E tests.
 8. **Deployment:** API/frontend Dockerfiles, production secret configuration, logging/metrics, backups and restore rehearsal, and migration smoke test.
 9. **Completion gate:** backend is complete only when approved in-scope processes have secured endpoints, durable data, agreed audit/storage behavior and automated E2E coverage, and a clean deployment starts reliably.
