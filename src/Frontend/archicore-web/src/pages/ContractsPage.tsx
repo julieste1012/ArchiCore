@@ -13,7 +13,9 @@ const contractLifecycleActions: LifecycleActionSpec[] = [
   { fromStatus: 'Suspended', endpoint: 'activate', label: 'Reactivar', successStatus: 'Activo' },
 ];
 
-type ContractsPageProps = { canManage?: boolean };\n\nexport function ContractsPage({ canManage = true }: ContractsPageProps) {
+type ContractsPageProps = { canManage?: boolean };
+
+export function ContractsPage({ canManage = true }: ContractsPageProps) {
   const [data, setData] = useState<PagedResult<Contract> | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [busy, setBusy] = useState(true);
