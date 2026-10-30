@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AuditPage } from './pages/AuditPage';
+import { SecurityAuditPage } from './pages/SecurityAuditPage';
 import { ChangePasswordForm } from './components/ChangePasswordForm';
 import { UsersPage } from './pages/UsersPage';
-import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, FolderKanban, KeyRound, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, UsersRound } from 'lucide-react';
+import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, FolderKanban, KeyRound, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, ShieldAlert, UsersRound } from 'lucide-react';
 import { useAuth } from './auth/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -11,7 +12,7 @@ import { ContractsPage } from './pages/ContractsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { WarehousesPage } from './pages/WarehousesPage';
 
-export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'users' | 'audit' | 'password';
+export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'users' | 'audit' | 'securityAudit' | 'password';
 
 const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; section: string }[] = [
   { id: 'dashboard', label: 'Panel general', icon: LayoutDashboard, section: 'ESPACIO DE TRABAJO' },
@@ -20,12 +21,13 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
   { id: 'projects', label: 'Proyectos', icon: FolderKanban, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'warehouses', label: 'Bodegas', icon: PackageOpen, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'users', label: 'Usuarios', icon: UsersRound, section: 'ADMINISTRACIÓN' },
-  { id: 'audit', label: 'Auditoría', icon: FileClock, section: 'ADMINISTRACIÓN' },
+  { id: 'audit', label: 'Eventos de dominio', icon: FileClock, section: 'ADMINISTRACIÓN' },
+  { id: 'securityAudit', label: 'Seguridad', icon: ShieldAlert, section: 'ADMINISTRACIÓN' },
   { id: 'password', label: 'Mi contraseña', icon: KeyRound, section: 'MI CUENTA' },
 ];
 
 const roleViewAccess: Record<string, ViewKey[]> = {
-  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'users', 'audit', 'password'],
+  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'users', 'audit', 'securityAudit', 'password'],
   AdministrativeManager: ['dashboard', 'customers', 'contracts', 'projects', 'password'],
   ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'password'],
   ArchiveTechnician: ['dashboard', 'projects', 'warehouses', 'password'],
@@ -42,7 +44,8 @@ const pageNames: Record<ViewKey, string> = {
   projects: 'Proyectos',
   warehouses: 'Bodegas',
   users: 'Usuarios',
-  audit: 'Auditoría',
+  audit: 'Eventos de dominio',
+  securityAudit: 'Auditoría de seguridad',
   password: 'Cambiar contraseña',
 };
 
@@ -66,6 +69,7 @@ export function App() {
       case 'warehouses': return <WarehousesPage canManage={user.role === 'SystemAdministrator'} />;
       case 'users': return <UsersPage />;
       case 'audit': return <AuditPage />;
+      case 'securityAudit': return <SecurityAuditPage />;
       case 'password': return <ChangePasswordForm onComplete={() => void logout()} />;
       default: return <DashboardPage onNavigate={setView} role={user.role} />;
     }
