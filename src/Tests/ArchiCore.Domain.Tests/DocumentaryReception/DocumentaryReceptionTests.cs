@@ -1,5 +1,6 @@
 using ArchiCore.Domain.DocumentaryReception;
 using ArchiCore.Domain.DocumentaryReception.Events;
+using ReceptionAggregate = ArchiCore.Domain.DocumentaryReception.DocumentaryReception;
 using Xunit;
 
 namespace ArchiCore.Domain.Tests.Receptions;
@@ -13,7 +14,7 @@ public sealed class DocumentaryReceptionTests
         var customerId = Guid.NewGuid();
         var receiverId = Guid.NewGuid();
 
-        var result = DocumentaryReception.Create(contractId, customerId, receiverId, "Entrega programada.");
+        var result = ReceptionAggregate.Create(contractId, customerId, receiverId, "Entrega programada.");
 
         Assert.True(result.IsSuccess);
         var reception = result.Value;
@@ -87,7 +88,7 @@ public sealed class DocumentaryReceptionTests
         Assert.Equal("Reception.InvalidCount", result.Error.Code);
     }
 
-    private static DocumentaryReception CreateReception()
-        => DocumentaryReception.Create(
+    private static ReceptionAggregate CreateReception()
+        => ReceptionAggregate.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Material recibido.").Value;
 }
