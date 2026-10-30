@@ -18,6 +18,9 @@ public abstract class ApiControllerBase : ControllerBase
         "Project.WarehouseNotFound",
         "Project.WarehouseAssignmentNotFound",
         "Warehouse.NotFound",
+        "Reception.NotFound",
+        "Reception.ContractNotFound",
+        "Reception.CustomerNotFound",
         "Authentication.UserNotFound",
     };
 
@@ -54,6 +57,11 @@ public abstract class ApiControllerBase : ControllerBase
         "Warehouse.InvalidMaintenance",
         "Warehouse.InvalidClose",
         "Warehouse.InvalidArchive",
+        "Reception.ContractNotActive",
+        "Reception.InvalidInspectionState",
+        "Reception.InvalidCountingState",
+        "Reception.InvalidApprovalState",
+        "Reception.InvalidSuspensionState",
         "Authentication.EmailAlreadyExists",
         "Authentication.CannotDeactivateSelf",
         "Authentication.CannotDeactivateLastAdministrator",
