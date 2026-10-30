@@ -28,9 +28,9 @@ const roleViewAccess: Record<string, ViewKey[]> = {
   SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'users', 'audit', 'password'],
   AdministrativeManager: ['dashboard', 'customers', 'contracts', 'projects', 'password'],
   ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'password'],
-  ArchiveTechnician: ['dashboard', 'password'],
-  ArchiveAssistant: ['dashboard', 'warehouses', 'password'],
-  DigitizationOperator: ['dashboard', 'password'],
+  ArchiveTechnician: ['dashboard', 'projects', 'warehouses', 'password'],
+  ArchiveAssistant: ['dashboard', 'projects', 'warehouses', 'password'],
+  DigitizationOperator: ['dashboard', 'projects', 'password'],
   BillingAssistant: ['dashboard', 'contracts', 'projects', 'password'],
   CustomerRepresentative: ['dashboard', 'password'],
 };
