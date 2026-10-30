@@ -20,8 +20,14 @@ const resourcesByRole: Record<string, Array<[ResourceKey, string]>> = {
   ProjectCoordinator: [
     ['contracts', '/contracts'], ['projects', '/projects'], ['warehouses', '/warehouses'],
   ],
+  ArchiveTechnician: [
+    ['projects', '/projects'], ['warehouses', '/warehouses'],
+  ],
   ArchiveAssistant: [
-    ['warehouses', '/warehouses'],
+    ['projects', '/projects'], ['warehouses', '/warehouses'],
+  ],
+  DigitizationOperator: [
+    ['projects', '/projects'],
   ],
   BillingAssistant: [
     ['contracts', '/contracts'], ['projects', '/projects'],
