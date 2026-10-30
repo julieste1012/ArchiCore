@@ -1,6 +1,6 @@
 using ArchiCore.Domain.DocumentaryReception;
 
-namespace ArchiCore.Application.DocumentaryReception;
+namespace ArchiCore.Application.Receptions;
 
 public sealed record DocumentaryReceptionDto(
     Guid Id,
