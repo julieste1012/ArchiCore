@@ -60,6 +60,18 @@ public sealed class Box : Entity, IAggregateRoot
                 new Error("Box.BarcodeRequired", "El código de barras es obligatorio."));
         }
 
+        if (Status == BoxStatus.Archived)
+        {
+            return Result.Failure(
+                new Error("Box.InvalidBarcodeAssignment", "No se puede modificar una caja archivada."));
+        }
+
+        if (Barcode is not null)
+        {
+            return Result.Failure(
+                new Error("Box.BarcodeAlreadyAssigned", "La caja ya tiene un código de barras asignado."));
+        }
+
         Barcode = barcode;
         MarkAsUpdated();
         AddDomainEvent(new BarcodeAssigned(Id, Barcode.Value));
