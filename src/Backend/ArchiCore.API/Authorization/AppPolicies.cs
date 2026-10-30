@@ -24,6 +24,8 @@ public static class AppPolicies
     public const string ReceptionsInspect = "Receptions.Inspect";
     public const string ReceptionsCount = "Receptions.Count";
     public const string ReceptionsApprove = "Receptions.Approve";
+    public const string BoxesRead = "Boxes.Read";
+    public const string BoxesRegister = "Boxes.Register";
 
     public static IServiceCollection AddArchiCoreAuthorization(this IServiceCollection services)
     {
@@ -99,6 +101,16 @@ public static class AppPolicies
             options.AddPolicy(ReceptionsApprove, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator,
                 AppRoles.ProjectCoordinator));
+
+            options.AddPolicy(BoxesRead, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ProjectCoordinator,
+                AppRoles.ArchiveTechnician,
+                AppRoles.ArchiveAssistant));
+
+            options.AddPolicy(BoxesRegister, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator,
+                AppRoles.ArchiveTechnician));
         });
 
         return services;
