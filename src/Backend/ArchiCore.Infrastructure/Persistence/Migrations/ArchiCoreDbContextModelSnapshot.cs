@@ -67,6 +67,24 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("DomainEventAuditEntries", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Audit.SecurityAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id").HasColumnType("uuid");
+                    b.Property<DateTime>("OccurredOnUtc").HasColumnType("timestamp with time zone");
+                    b.Property<string>("Action").IsRequired().HasMaxLength(128).HasColumnType("character varying(128)");
+                    b.Property<string>("Outcome").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)");
+                    b.Property<Guid?>("ActorUserId").HasColumnType("uuid");
+                    b.Property<string>("ActorRole").HasMaxLength(64).HasColumnType("character varying(64)");
+                    b.Property<Guid?>("TargetUserId").HasColumnType("uuid");
+                    b.Property<string>("TargetRole").HasMaxLength(64).HasColumnType("character varying(64)");
+                    b.HasKey("Id");
+                    b.HasIndex("Action").HasDatabaseName("IX_SecurityAuditEntries_Action");
+                    b.HasIndex("ActorUserId").HasDatabaseName("IX_SecurityAuditEntries_ActorUserId");
+                    b.HasIndex("OccurredOnUtc").HasDatabaseName("IX_SecurityAuditEntries_OccurredOnUtc");
+                    b.HasIndex("TargetUserId").HasDatabaseName("IX_SecurityAuditEntries_TargetUserId");
+                    b.ToTable("SecurityAuditEntries", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Infrastructure.Security.UserAccount", b =>
                 {
                     b.Property<Guid>("Id").HasColumnType("uuid");
