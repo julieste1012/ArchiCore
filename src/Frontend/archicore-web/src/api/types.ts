@@ -117,3 +117,34 @@ export type SecurityAuditEntry = {
   targetUserId: string | null;
   targetRole: string | null;
 };
+
+
+export type DocumentaryReceptionStatus = 'Received' | 'Inspected' | 'CountingRecorded' | 'Counted' | 'Suspended';
+
+export type DocumentaryReception = {
+  id: string;
+  contractId: string;
+  customerId: string;
+  receivedByUserId: string;
+  receivedAtUtc: string;
+  initialObservations: string | null;
+  status: DocumentaryReceptionStatus;
+  inspectedByUserId: string | null;
+  inspectionCompletedAtUtc: string | null;
+  safeToAccept: boolean | null;
+  inspectionObservations: string | null;
+  declaredBoxCount: number | null;
+  declaredFolderCount: number | null;
+  countedBoxCount: number | null;
+  countedFolderCount: number | null;
+  discrepancyReport: string | null;
+  countedByUserId: string | null;
+  countedAtUtc: string | null;
+  approvedByUserId: string | null;
+  approvedAtUtc: string | null;
+  suspendedByUserId: string | null;
+  suspendedAtUtc: string | null;
+  suspensionReason: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+};
