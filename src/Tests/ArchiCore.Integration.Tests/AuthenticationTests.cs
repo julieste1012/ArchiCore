@@ -184,6 +184,113 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
     }
 
     [Fact]
+    public async Task Administrative_manager_can_manage_customers_and_read_contracts_but_cannot_administer_users()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var user = await CreateUserAsync(anonymous, AppRoles.AdministrativeManager);
+        var session = await LoginAsync(anonymous, user.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var customers = await anonymous.GetAsync("/api/customers", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, customers);
+
+        using var contracts = await anonymous.GetAsync("/api/contracts", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, contracts);
+
+        using var createCustomer = await anonymous.PostAsJsonAsync("/api/customers",
+            new { nit = TestData.Nit() }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Created, createCustomer);
+
+        using var createUser = await anonymous.PostAsJsonAsync("/api/auth/users", new
+        {
+            email = $"forbidden-{Guid.NewGuid():N}@archicore.test",
+            displayName = "Forbidden User",
+            password = StrongPassword,
+            role = AppRoles.ArchiveAssistant
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, createUser);
+
+        using var audit = await anonymous.GetAsync("/api/audit/domain-events", Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, audit);
+    }
+
+    [Fact]
+    public async Task Project_coordinator_can_operate_projects_and_assign_warehouses()
+    {
+        var customer = await CreateCustomerAsync();
+        var contract = await CreateContractAsync(customer.Id);
+        var warehouse = await CreateWarehouseAsync();
+
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var user = await CreateUserAsync(anonymous, AppRoles.ProjectCoordinator);
+        var session = await LoginAsync(anonymous, user.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var projects = await anonymous.GetAsync("/api/projects", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, projects);
+
+        using var warehouses = await anonymous.GetAsync("/api/warehouses", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, warehouses);
+
+        using var createProject = await anonymous.PostAsJsonAsync("/api/projects",
+            new { projectCode = TestData.ProjectCode(), contractId = contract.Id }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Created, createProject);
+        var project = await ReadBodyAsync<ProjectResponse>(createProject);
+
+        using var assign = await anonymous.PostAsJsonAsync($"/api/projects/{project.Id}/warehouses",
+            new { warehouseId = warehouse.Id, assignedFrom = FixedDate }, Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, assign);
+
+        using var createCustomer = await anonymous.PostAsJsonAsync("/api/customers",
+            new { nit = TestData.Nit() }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, createCustomer);
+    }
+
+    [Fact]
+    public async Task Archive_assistant_can_read_warehouse_registry_but_cannot_administer_warehouses_or_projects()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var user = await CreateUserAsync(anonymous, AppRoles.ArchiveAssistant);
+        var session = await LoginAsync(anonymous, user.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var warehouses = await anonymous.GetAsync("/api/warehouses", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, warehouses);
+
+        using var createWarehouse = await anonymous.PostAsJsonAsync("/api/warehouses",
+            new { warehouseCode = TestData.WarehouseCode() }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, createWarehouse);
+
+        using var projects = await anonymous.GetAsync("/api/projects", Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, projects);
+    }
+
+    [Fact]
+    public async Task Billing_assistant_can_read_contracts_and_projects_without_lifecycle_permissions()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        var user = await CreateUserAsync(anonymous, AppRoles.BillingAssistant);
+        var session = await LoginAsync(anonymous, user.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var contracts = await anonymous.GetAsync("/api/contracts", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, contracts);
+
+        using var projects = await anonymous.GetAsync("/api/projects", Ct);
+        await AssertStatusAsync(HttpStatusCode.OK, projects);
+
+        using var createContract = await anonymous.PostAsJsonAsync("/api/contracts", new
+        {
+            contractNumber = TestData.ContractNumber(),
+            clientId = Guid.NewGuid(),
+            startDate = FixedDate,
+            totalValue = 1000m,
+            currency = "COP"
+        }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, createContract);
+    }
+
+    [Fact]
     public async Task User_creation_rejects_weak_password_and_duplicate_email()
     {
         using var anonymous = Fixture.CreateAnonymousClient();
