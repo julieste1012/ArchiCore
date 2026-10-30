@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import { CheckCheck, ClipboardList, Plus, RefreshCw, ShieldAlert, X } from 'lucide-react';
 import { api, ApiError } from '../api/client';
 import type { Contract, DocumentaryReception, PagedResult } from '../api/types';
@@ -232,8 +232,8 @@ export function ReceptionsPage({ role }: ReceptionsPageProps) {
                   const isOpen = activeReceptionId === reception.id;
                   const isTerminal = reception.status === 'Counted' || reception.status === 'Suspended';
                   return (
-                    <>
-                      <tr key={reception.id}>
+                    <Fragment key={reception.id}>
+                      <tr>
                         <td><span className="main-cell"><strong>{shortId(reception.id)}</strong><small>Cliente {shortId(reception.customerId)}</small></span></td>
                         <td>{shortId(reception.contractId)}</td>
                         <td>{formatDate(reception.receivedAtUtc)}</td>
@@ -291,7 +291,7 @@ export function ReceptionsPage({ role }: ReceptionsPageProps) {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
