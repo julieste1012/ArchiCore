@@ -20,7 +20,8 @@ public sealed class DocumentaryReceptionService(
         CancellationToken cancellationToken = default)
     {
         (page, pageSize) = NormalizePage(page, pageSize);
-        var skip = (page - 1) * pageSize;
+        var skipLong = ((long)page - 1L) * pageSize;
+        var skip = (int)Math.Min(skipLong, int.MaxValue);
         var items = await receptions.ListAsync(contractId, status, skip, pageSize, cancellationToken);
         var totalCount = await receptions.CountAsync(contractId, status, cancellationToken);
         return new PagedResult<DocumentaryReceptionDto>(
