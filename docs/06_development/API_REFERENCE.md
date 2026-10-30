@@ -178,6 +178,59 @@ Create body:
 
 Physical location management is not yet exposed via API.
 
+## Documentary receptions and counting (BP-001 / BP-002)
+
+Reception reads are available to `SystemAdministrator`, `ProjectCoordinator`, `ArchiveTechnician` and `ArchiveAssistant`. Creating a reception requires `SystemAdministrator` or `ProjectCoordinator`. Inspection and counting require `SystemAdministrator`, `ProjectCoordinator` or `ArchiveAssistant`. Final count approval and manual suspension require `SystemAdministrator` or `ProjectCoordinator`.
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/api/receptions?page=1&pageSize=20&contractId={contractId}&status={status}` | Paged reception list; contract and status filters are optional. |
+| GET | `/api/receptions/{id}` | Get reception and inspection/count history. |
+| POST | `/api/receptions` | Register a delivery against an active contract. |
+| POST | `/api/receptions/{id}/inspection` | Record physical inspection. |
+| POST | `/api/receptions/{id}/counting` | Record declared and physically counted boxes/folders. |
+| POST | `/api/receptions/{id}/counting/approve` | Coordinator approves the recorded count. |
+| POST | `/api/receptions/{id}/suspend` | Suspend a reception with a reason. |
+
+Create body:
+
+```json
+{
+  "contractId": "00000000-0000-0000-0000-000000000000",
+  "initialObservations": "Inventario de entrega y novedades iniciales"
+}
+```
+
+Inspection body:
+
+```json
+{
+  "safeToAccept": true,
+  "observations": "Cajas íntegras, etiquetas legibles y sellos completos."
+}
+```
+
+Counting body:
+
+```json
+{
+  "declaredBoxCount": 10,
+  "declaredFolderCount": 120,
+  "countedBoxCount": 9,
+  "countedFolderCount": 118,
+  "discrepancyReport": "Se registra una caja y dos carpetas faltantes."
+}
+```
+
+Suspension body:
+
+```json
+{ "reason": "Novedad física o discrepancia que impide continuar." }
+```
+
+The implemented state flow is `Received → Inspected → CountingRecorded → Counted`. Unsafe physical inspection or an explicit coordinator suspension leads to `Suspended`. An inspection marked unsafe requires an observation; any difference between declared and counted boxes/folders requires a discrepancy report; negative counts are rejected. The API records the user ID and timestamp for receiving, inspection, counting, approval and suspension, and domain events are published through the transactional outbox.
+
+**Current scope boundary:** the workflow stores delivery-level box/folder totals and a discrepancy record. It does not yet model each physical box/folder, validate a scheduled delivery, reserve physical capacity, or assign an aisle/shelf/cabinet position. Those capabilities depend on the unresolved WarehouseLocation and documentary hierarchy decisions. Therefore this is an implemented BP-001/BP-002 API slice, not a complete warehouse inventory or final business acceptance.
 ## Domain-event audit
 
 Requires SystemAdministrator.
@@ -204,6 +257,7 @@ This endpoint is deliberately separate from `/api/audit/domain-events`: domain-e
 | Contracts | SystemAdministrator, AdministrativeManager, ProjectCoordinator, BillingAssistant | SystemAdministrator, AdministrativeManager |
 | Projects | SystemAdministrator, AdministrativeManager, ProjectCoordinator, ArchiveTechnician, ArchiveAssistant, DigitizationOperator, BillingAssistant | SystemAdministrator, ProjectCoordinator |
 | Warehouses | SystemAdministrator, ProjectCoordinator, ArchiveTechnician, ArchiveAssistant | SystemAdministrator |
+| Receptions | SystemAdministrator, ProjectCoordinator, ArchiveTechnician, ArchiveAssistant | Receive: SystemAdministrator/ProjectCoordinator; inspect/count: SystemAdministrator/ProjectCoordinator/ArchiveAssistant; approve/suspend: SystemAdministrator/ProjectCoordinator |
 | Users and audit | SystemAdministrator | SystemAdministrator |
 
 The customer portal role is reserved for a future tenant-scoped portal. It has no access to internal records in the current API. Documentary technicians, assistants, digitization operators and billing staff receive only the read context needed for their approved duties until their specific workflows are implemented.
