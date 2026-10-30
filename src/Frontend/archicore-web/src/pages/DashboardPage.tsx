@@ -6,13 +6,13 @@ import { ErrorMessage, LoadingState } from '../components/Feedback';
 import { ModuleHeader } from '../components/ModuleHeader';
 import type { ViewKey } from '../App';
 
-type DashboardStats = { customers: number; contracts: number; projects: number; warehouses: number; receptions: number };
+type DashboardStats = { customers: number; contracts: number; projects: number; warehouses: number; receptions: number; boxes: number };
 type ResourceKey = keyof DashboardStats;
-const zeroStats: DashboardStats = { customers: 0, contracts: 0, projects: 0, warehouses: 0, receptions: 0 };
+const zeroStats: DashboardStats = { customers: 0, contracts: 0, projects: 0, warehouses: 0, receptions: 0, boxes: 0 };
 
 const resourcesByRole: Record<string, Array<[ResourceKey, string]>> = {
   SystemAdministrator: [
-    ['customers', '/customers'], ['contracts', '/contracts'], ['projects', '/projects'], ['warehouses', '/warehouses'], ['receptions', '/receptions'],
+    ['customers', '/customers'], ['contracts', '/contracts'], ['projects', '/projects'], ['warehouses', '/warehouses'], ['receptions', '/receptions'], ['boxes', '/boxes'], ['boxes', '/boxes'],
   ],
   AdministrativeManager: [
     ['customers', '/customers'], ['contracts', '/contracts'], ['projects', '/projects'],
@@ -68,6 +68,7 @@ export function DashboardPage({ onNavigate, role }: DashboardPageProps) {
     { key: 'projects' as const, label: 'Proyectos', value: stats.projects, icon: FolderKanban, view: 'projects' as const, note: 'Ejecución operativa', trend: 'Ver proyectos' },
     { key: 'warehouses' as const, label: 'Bodegas', value: stats.warehouses, icon: PackageOpen, view: 'warehouses' as const, note: 'Infraestructura de custodia', trend: 'Ver bodegas' },
     { key: 'receptions' as const, label: 'Recepciones', value: stats.receptions, icon: ClipboardList, view: 'receptions' as const, note: 'Ingresos documentales', trend: 'Ver recepciones' },
+    { key: 'boxes' as const, label: 'Cajas registradas', value: stats.boxes, icon: Boxes, view: 'boxes' as const, note: 'Identificación física', trend: 'Ver cajas' },
   ].filter((metric) => (resourcesByRole[role] ?? []).some(([key]) => key === metric.key));
 
   const quickActions = [
@@ -76,6 +77,7 @@ export function DashboardPage({ onNavigate, role }: DashboardPageProps) {
     { key: 'projects' as const, title: 'Seguir proyectos', description: 'Estado de ejecución', icon: FolderKanban, view: 'projects' as const },
     { key: 'warehouses' as const, title: 'Consultar bodegas', description: 'Infraestructura de custodia', icon: PackageOpen, view: 'warehouses' as const },
     { key: 'receptions' as const, title: 'Gestionar recepciones', description: 'Inspección y conteo', icon: ClipboardList, view: 'receptions' as const },
+    { key: 'boxes' as const, title: 'Administrar cajas', description: 'Códigos y etiquetas', icon: Boxes, view: 'boxes' as const },
   ].filter((action) => (resourcesByRole[role] ?? []).some(([key]) => key === action.key));
 
   return (
