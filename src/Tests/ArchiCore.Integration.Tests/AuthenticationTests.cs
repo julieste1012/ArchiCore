@@ -514,6 +514,58 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
         await AssertStatusAsync(HttpStatusCode.Forbidden, deactivate);
     }
 
+    [Fact]
+    public async Task Security_audit_records_login_failures_successes_and_account_creation_with_actor_and_target()
+    {
+        var administrator = await GetJsonAsync<UserAccountDto>("/api/auth/me");
+        var target = await CreateUserAsync(Fixture.CreateAnonymousClient(), AppRoles.BillingAssistant);
+
+        using var anonymous = Fixture.CreateAnonymousClient();
+        using var failedLogin = await anonymous.PostAsJsonAsync("/api/auth/login",
+            new { email = target.Email, password = "Wrong_password_2026!" }, Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, failedLogin);
+
+        var session = await LoginAsync(anonymous, target.Email);
+        Assert.False(string.IsNullOrWhiteSpace(session.AccessToken));
+
+        var createdAudit = await GetJsonAsync<PagedResponse<SecurityAuditResponse>>(
+            $"/api/audit/security-events?action=User.Created&outcome=Succeeded&page=1&pageSize=100");
+        var createdEntry = Assert.Single(createdAudit.Items,
+            entry => entry.TargetUserId == target.Id);
+        Assert.Equal(administrator.Id, createdEntry.ActorUserId);
+        Assert.Equal(AppRoles.SystemAdministrator, createdEntry.ActorRole);
+        Assert.Equal(AppRoles.BillingAssistant, createdEntry.TargetRole);
+
+        var failedLoginAudit = await GetJsonAsync<PagedResponse<SecurityAuditResponse>>(
+            "/api/audit/security-events?action=Authentication.Login&outcome=Failed&page=1&pageSize=100");
+        var failedEntry = Assert.Single(failedLoginAudit.Items,
+            entry => entry.TargetUserId == target.Id);
+        Assert.Null(failedEntry.ActorUserId);
+        Assert.Equal(AppRoles.BillingAssistant, failedEntry.TargetRole);
+
+        var successfulLoginAudit = await GetJsonAsync<PagedResponse<SecurityAuditResponse>>(
+            "/api/audit/security-events?action=Authentication.Login&outcome=Succeeded&page=1&pageSize=100");
+        Assert.Contains(successfulLoginAudit.Items, entry =>
+            entry.ActorUserId == target.Id
+            && entry.TargetUserId == target.Id
+            && entry.ActorRole == AppRoles.BillingAssistant);
+    }
+
+    [Fact]
+    public async Task Security_audit_is_restricted_to_system_administrators()
+    {
+        using var anonymous = Fixture.CreateAnonymousClient();
+        using var anonymousResponse = await anonymous.GetAsync("/api/audit/security-events", Ct);
+        await AssertStatusAsync(HttpStatusCode.Unauthorized, anonymousResponse);
+
+        var user = await CreateUserAsync(anonymous, AppRoles.AdministrativeManager);
+        var session = await LoginAsync(anonymous, user.Email);
+        anonymous.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+
+        using var forbidden = await anonymous.GetAsync("/api/audit/security-events", Ct);
+        await AssertStatusAsync(HttpStatusCode.Forbidden, forbidden);
+    }
+
     private async Task<UserAccountDto> CreateUserAsync(HttpClient anonymous, string role)
     {
         var email = $"test-{Guid.NewGuid():N}@archicore.test";
