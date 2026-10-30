@@ -6,6 +6,7 @@ using ArchiCore.Application.Authentication;
 using ArchiCore.Application.Common;
 using ArchiCore.Domain.Common;
 using ArchiCore.Infrastructure.Persistence;
+using ArchiCore.Infrastructure.Persistence.Audit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -32,6 +33,8 @@ public sealed class AuthenticationService(
         // accounts and locked accounts to avoid disclosing account state.
         if (user is null || !user.IsActive)
         {
+            await RecordSecurityAsync(
+                "Authentication.Login", "Failed", null, null, user?.Id, user?.Role, cancellationToken);
             return InvalidCredentials();
         }
 
@@ -43,6 +46,8 @@ public sealed class AuthenticationService(
 
         if (user.LockoutEndUtc is not null && user.LockoutEndUtc > now)
         {
+            await RecordSecurityAsync(
+                "Authentication.Login", "Failed", null, null, user.Id, user.Role, cancellationToken);
             return InvalidCredentials();
         }
 
@@ -50,6 +55,8 @@ public sealed class AuthenticationService(
         if (verification == PasswordVerificationResult.Failed)
         {
             user.RecordFailedLogin(now);
+            dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+                "Authentication.Login", "Failed", targetUserId: user.Id, targetRole: user.Role, occurredOnUtc: now));
             await dbContext.SaveChangesAsync(cancellationToken);
             return InvalidCredentials();
         }
@@ -60,6 +67,8 @@ public sealed class AuthenticationService(
         }
 
         user.ResetFailedLoginState(now);
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            "Authentication.Login", "Succeeded", user.Id, user.Role, user.Id, user.Role, now));
         return Result.Success(await IssueSessionAsync(user, cancellationToken));
     }
 
@@ -69,6 +78,8 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
         {
+            await RecordSecurityAsync(
+                "Authentication.Refresh", "Failed", null, null, null, null, cancellationToken);
             return InvalidRefreshToken();
         }
 
@@ -80,6 +91,8 @@ public sealed class AuthenticationService(
         var now = DateTime.UtcNow;
         if (existing is null)
         {
+            await RecordSecurityAsync(
+                "Authentication.Refresh", "Failed", null, null, null, null, cancellationToken);
             return InvalidRefreshToken();
         }
 
@@ -92,11 +105,17 @@ public sealed class AuthenticationService(
                 await RevokeAllSessionsAsync(existing.UserAccountId, cancellationToken);
             }
 
+            await RecordSecurityAsync(
+                "Authentication.Refresh", "Failed", null, null,
+                existing.UserAccountId, existing.UserAccount.Role, cancellationToken);
             return InvalidRefreshToken();
         }
 
         if (existing.ExpiresAtUtc <= now || !existing.UserAccount.IsActive)
         {
+            await RecordSecurityAsync(
+                "Authentication.Refresh", "Failed", null, null,
+                existing.UserAccountId, existing.UserAccount.Role, cancellationToken);
             return InvalidRefreshToken();
         }
 
@@ -108,6 +127,10 @@ public sealed class AuthenticationService(
         existing.Revoke(now, newHash);
         dbContext.RefreshTokens.Add(
             RefreshTokenRecord.Create(existing.UserAccountId, newHash, now, newExpires));
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            "Authentication.Refresh", "Succeeded",
+            existing.UserAccountId, existing.UserAccount.Role,
+            existing.UserAccountId, existing.UserAccount.Role, now));
 
         try
         {
@@ -133,16 +156,21 @@ public sealed class AuthenticationService(
         }
 
         var hash = HashRefreshToken(request.RefreshToken);
-        var token = await dbContext.RefreshTokens.SingleOrDefaultAsync(
-            candidate => candidate.TokenHash == hash,
-            cancellationToken);
+        var token = await dbContext.RefreshTokens
+            .Include(candidate => candidate.UserAccount)
+            .SingleOrDefaultAsync(candidate => candidate.TokenHash == hash, cancellationToken);
 
         if (token is null || token.RevokedAtUtc is not null)
         {
             return;
         }
 
-        token.Revoke(DateTime.UtcNow);
+        var now = DateTime.UtcNow;
+        token.Revoke(now);
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            "Authentication.Logout", "Succeeded",
+            token.UserAccountId, token.UserAccount.Role,
+            token.UserAccountId, token.UserAccount.Role, now));
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -160,6 +188,8 @@ public sealed class AuthenticationService(
 
     public async Task<Result<UserAccountDto>> CreateUserAsync(
         CreateUserRequest request,
+        Guid actorUserId,
+        string actorRole,
         CancellationToken cancellationToken = default)
     {
         var email = request.Email?.Trim() ?? string.Empty;
@@ -204,6 +234,8 @@ public sealed class AuthenticationService(
         var account = UserAccount.Create(email, displayName, role);
         account.SetPasswordHash(passwordHasher.HashPassword(account, password));
         dbContext.UserAccounts.Add(account);
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            "User.Created", "Succeeded", actorUserId, actorRole, account.Id, account.Role));
 
         try
         {
@@ -267,6 +299,8 @@ public sealed class AuthenticationService(
             refreshToken.Revoke(now);
         }
 
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            "User.PasswordChanged", "Succeeded", account.Id, account.Role, account.Id, account.Role, now));
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
@@ -290,6 +324,8 @@ public sealed class AuthenticationService(
     public async Task<Result<UserAccountDto>> SetUserActiveAsync(
         Guid userId,
         bool isActive,
+        Guid actorUserId,
+        string actorRole,
         CancellationToken cancellationToken = default)
     {
         var account = await dbContext.UserAccounts
@@ -333,8 +369,30 @@ public sealed class AuthenticationService(
             }
         }
 
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            isActive ? "User.Activated" : "User.Deactivated",
+            "Succeeded",
+            actorUserId,
+            actorRole,
+            account.Id,
+            account.Role,
+            now));
         await dbContext.SaveChangesAsync(cancellationToken);
         return Result.Success(ToDto(account));
+    }
+
+    private async Task RecordSecurityAsync(
+        string action,
+        string outcome,
+        Guid? actorUserId,
+        string? actorRole,
+        Guid? targetUserId,
+        string? targetRole,
+        CancellationToken cancellationToken)
+    {
+        dbContext.SecurityAuditEntries.Add(SecurityAuditEntry.Create(
+            action, outcome, actorUserId, actorRole, targetUserId, targetRole));
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task RevokeAllSessionsAsync(Guid userId, CancellationToken cancellationToken)
