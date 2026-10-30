@@ -73,7 +73,8 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [ ] OpenAPI contract review for all endpoint request/response models
 
 ## Phase 6 — End-to-end business workflows ⏳ Not complete
-- [ ] Documentary reception (BP-001) and counting (BP-002) end to end
+- [x] Initial BP-001/BP-002 API workflow: reception record, physical inspection, declared-vs-counted boxes/folders, discrepancy report, suspension and coordinator approval
+- [ ] Complete BP-001/BP-002 acceptance: scheduled-delivery checks, physical-capacity validation, item-level inventory and business UAT
 - [ ] Verification, classification and labeling
 - [ ] ERP documentary registration and physical storage/location assignment
 - [ ] Search and retrieval
@@ -118,7 +119,8 @@ Current phase: Core API + authentication/audit + operational frontend slice; doc
 - [x] CI typecheck and production build
 - [ ] Edit/detail screens and broader form validation
 - [x] Role-aware navigation/actions for existing core API permissions
-- [ ] Documentary modules, actor-aware audit improvements and approved role-specific module views
+- [x] Initial reception/counting workflow UI and administrator security-audit UI
+- [ ] Verification/classification/labeling modules and item-level documentary inventory
 - [ ] Frontend component tests and end-to-end workflows against a clean deployment
 
 ## Current completed maintenance work
