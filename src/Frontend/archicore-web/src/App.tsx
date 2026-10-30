@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { AuditPage } from './pages/AuditPage';
+import { ReceptionsPage } from './pages/ReceptionsPage';
 import { SecurityAuditPage } from './pages/SecurityAuditPage';
 import { ChangePasswordForm } from './components/ChangePasswordForm';
 import { UsersPage } from './pages/UsersPage';
-import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, FolderKanban, KeyRound, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, ShieldAlert, UsersRound } from 'lucide-react';
+import { Activity, Archive, Bell, Boxes, ChevronDown, FileCheck2, FileClock, ClipboardList, FolderKanban, KeyRound, LayoutDashboard, LogOut, PackageOpen, Settings2, ShieldCheck, ShieldAlert, UsersRound } from 'lucide-react';
 import { useAuth } from './auth/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -12,7 +13,7 @@ import { ContractsPage } from './pages/ContractsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { WarehousesPage } from './pages/WarehousesPage';
 
-export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'users' | 'audit' | 'securityAudit' | 'password';
+export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'receptions' | 'users' | 'audit' | 'securityAudit' | 'password';
 
 const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; section: string }[] = [
   { id: 'dashboard', label: 'Panel general', icon: LayoutDashboard, section: 'ESPACIO DE TRABAJO' },
@@ -20,6 +21,7 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
   { id: 'contracts', label: 'Contratos', icon: FileCheck2, section: 'GESTIÓN COMERCIAL' },
   { id: 'projects', label: 'Proyectos', icon: FolderKanban, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'warehouses', label: 'Bodegas', icon: PackageOpen, section: 'OPERACIÓN DOCUMENTAL' },
+  { id: 'receptions', label: 'Recepciones', icon: ClipboardList, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'users', label: 'Usuarios', icon: UsersRound, section: 'ADMINISTRACIÓN' },
   { id: 'audit', label: 'Eventos de dominio', icon: FileClock, section: 'ADMINISTRACIÓN' },
   { id: 'securityAudit', label: 'Seguridad', icon: ShieldAlert, section: 'ADMINISTRACIÓN' },
@@ -27,11 +29,11 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
 ];
 
 const roleViewAccess: Record<string, ViewKey[]> = {
-  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'users', 'audit', 'securityAudit', 'password'],
+  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'receptions', 'users', 'audit', 'securityAudit', 'password'],
   AdministrativeManager: ['dashboard', 'customers', 'contracts', 'projects', 'password'],
-  ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'password'],
-  ArchiveTechnician: ['dashboard', 'projects', 'warehouses', 'password'],
-  ArchiveAssistant: ['dashboard', 'projects', 'warehouses', 'password'],
+  ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'receptions', 'password'],
+  ArchiveTechnician: ['dashboard', 'projects', 'warehouses', 'receptions', 'password'],
+  ArchiveAssistant: ['dashboard', 'projects', 'warehouses', 'receptions', 'password'],
   DigitizationOperator: ['dashboard', 'projects', 'password'],
   BillingAssistant: ['dashboard', 'contracts', 'projects', 'password'],
   CustomerRepresentative: ['dashboard', 'password'],
@@ -43,6 +45,7 @@ const pageNames: Record<ViewKey, string> = {
   contracts: 'Contratos',
   projects: 'Proyectos',
   warehouses: 'Bodegas',
+  receptions: 'Recepción documental',
   users: 'Usuarios',
   audit: 'Eventos de dominio',
   securityAudit: 'Auditoría de seguridad',
@@ -67,6 +70,7 @@ export function App() {
       case 'contracts': return <ContractsPage canManage={user.role === 'SystemAdministrator' || user.role === 'AdministrativeManager'} />;
       case 'projects': return <ProjectsPage canOperate={user.role === 'SystemAdministrator' || user.role === 'ProjectCoordinator'} />;
       case 'warehouses': return <WarehousesPage canManage={user.role === 'SystemAdministrator'} />;
+      case 'receptions': return <ReceptionsPage role={user.role} />;
       case 'users': return <UsersPage />;
       case 'audit': return <AuditPage />;
       case 'securityAudit': return <SecurityAuditPage />;
