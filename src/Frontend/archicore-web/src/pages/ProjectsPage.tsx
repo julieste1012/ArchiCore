@@ -22,7 +22,7 @@ const projectLifecycleActions: LifecycleActionSpec[] = [
   { fromStatus: 'Closed', endpoint: 'archive', label: 'Archivar', successStatus: 'Archivado', confirmationMessage: '¿Archivar este proyecto? Esta acción cambia su estado de forma permanente.' },
 ];
 
-export function ProjectsPage() {
+type ProjectsPageProps = { canOperate?: boolean };\n\nexport function ProjectsPage({ canOperate = true }: ProjectsPageProps) {
   const [data, setData] = useState<PagedResult<Project> | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -43,17 +43,24 @@ export function ProjectsPage() {
   async function load() {
     setBusy(true); setError('');
     try {
-      const [projects, agreements, warehouseResult] = await Promise.all([
-        api.get<PagedResult<Project>>('/projects?page=1&pageSize=100'),
-        api.get<PagedResult<Contract>>('/contracts?page=1&pageSize=100'),
-        api.get<PagedResult<Warehouse>>('/warehouses?page=1&pageSize=100'),
-      ]);
-      setData(projects); setContracts(agreements.items); setWarehouses(warehouseResult.items);
-      if (!contractId && agreements.items[0]) setContractId(agreements.items[0].id);
+      const projects = await api.get<PagedResult<Project>>('/projects?page=1&pageSize=100');
+      setData(projects);
+      if (canOperate) {
+        const [agreements, warehouseResult] = await Promise.all([
+          api.get<PagedResult<Contract>>('/contracts?page=1&pageSize=100'),
+          api.get<PagedResult<Warehouse>>('/warehouses?page=1&pageSize=100'),
+        ]);
+        setContracts(agreements.items);
+        setWarehouses(warehouseResult.items);
+        if (!contractId && agreements.items[0]) setContractId(agreements.items[0].id);
+      } else {
+        setContracts([]);
+        setWarehouses([]);
+      }
     } catch (caught) { setError(caught instanceof ApiError ? caught.message : 'No se pudieron consultar los proyectos.'); }
     finally { setBusy(false); }
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [canOperate]);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setError(''); setSuccess('');
@@ -128,15 +135,15 @@ export function ProjectsPage() {
   const rows = (data?.items ?? []).filter((p) => !search || p.projectCode.toLowerCase().includes(search.toLowerCase()));
   return (
     <>
-      <ModuleHeader eyebrow="EJECUCIÓN OPERATIVA" title="Proyectos" description="Unidades de trabajo vinculadas a los contratos de servicio." action={<><button className="secondary-button" onClick={() => void load()}><RefreshCw size={16} /> Actualizar</button><button className="primary-button" onClick={() => setShowCreate((v) => !v)}><Plus size={17} /> Nuevo proyecto</button></>} />
+      <ModuleHeader eyebrow="EJECUCIÓN OPERATIVA" title="Proyectos" description="Unidades de trabajo vinculadas a los contratos de servicio." action={<><button className="secondary-button" onClick={() => void load()}><RefreshCw size={16} /> Actualizar</button>{canOperate && <button className="primary-button" onClick={() => setShowCreate((v) => !v)}><Plus size={17} /> Nuevo proyecto</button>}</>} />
       {error && <ErrorMessage>{error}</ErrorMessage>}{success && <SuccessMessage>{success}</SuccessMessage>}
-      {showCreate && <section className="content-card create-card"><div className="section-heading"><div><p className="eyebrow">ALTA DE PROYECTO</p><h2>Datos de ejecución</h2></div><button className="icon-button" aria-label="Cerrar formulario" onClick={() => setShowCreate(false)}><X size={18} /></button></div>
+      {canOperate && showCreate && <section className="content-card create-card"><div className="section-heading"><div><p className="eyebrow">ALTA DE PROYECTO</p><h2>Datos de ejecución</h2></div><button className="icon-button" aria-label="Cerrar formulario" onClick={() => setShowCreate(false)}><X size={18} /></button></div>
         {contracts.length === 0 ? <ErrorMessage>Registra primero un contrato para poder asociar un proyecto.</ErrorMessage> :
         <form className="inline-form" onSubmit={create}><div className="field-grow"><label htmlFor="project-code">Código de proyecto</label><input id="project-code" required value={projectCode} onChange={(e) => setProjectCode(e.target.value)} placeholder="PRJ-2026-000001" /></div><div className="field-grow"><label htmlFor="project-contract">Contrato</label><select id="project-contract" required value={contractId} onChange={(e) => setContractId(e.target.value)}>{contracts.map((c) => <option key={c.id} value={c.id}>{c.contractNumber}</option>)}</select></div><button className="primary-button" type="submit" disabled={saving || !contractId}>{saving ? 'Guardando…' : 'Guardar proyecto'}</button></form>}
       </section>}
       <section className="content-card table-card"><div className="table-toolbar"><div><h2>Proyectos registrados</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar código" aria-label="Buscar proyecto" /></label></div>
         {busy ? <LoadingState label="Consultando proyectos…" /> : rows.length === 0 ? <div className="empty-state"><FolderKanban size={25} /><strong>No hay proyectos que mostrar</strong><span>Crea un proyecto vinculado a un contrato.</span></div> :
-        <div className="table-scroll"><table><thead><tr><th>PROYECTO</th><th>CONTRATO</th><th>ESTADO</th><th>BODEGAS ACTIVAS</th><th>INICIO</th><th>ACCIONES</th></tr></thead><tbody>{rows.map((p) => (
+        <div className="table-scroll"><table><thead><tr><th>PROYECTO</th><th>CONTRATO</th><th>ESTADO</th><th>BODEGAS ACTIVAS</th><th>INICIO</th>{canOperate && <th>ACCIONES</th>}</tr></thead><tbody>{rows.map((p) => (
           <Fragment key={p.id}>
             <tr>
               <td><span className="table-avatar table-avatar-purple"><FolderKanban size={17} /></span><span className="main-cell"><strong>{p.projectCode}</strong><small>ID {p.id.slice(0, 8).toUpperCase()}</small></span></td>
@@ -144,16 +151,16 @@ export function ProjectsPage() {
               <td><StatusBadge status={p.status} /></td>
               <td><span className="count-chip">{p.warehouseAssignments.filter((assignment) => assignment.isActive).length}</span></td>
               <td>{p.startDate ? new Date(p.startDate).toLocaleDateString('es-CO') : '—'}</td>
-              <td>
+              {canOperate && <td>
                 <div className="project-row-actions">
                   <LifecycleActions status={p.status} actions={projectLifecycleActions} busy={transitioningId === p.id || assignmentBusyProjectId === p.id} onAction={(action) => void transition(p, action)} />
                   <button type="button" className="table-action" onClick={() => setManagingProjectId((current) => current === p.id ? null : p.id)} aria-expanded={managingProjectId === p.id}>
                     {managingProjectId === p.id ? 'Cerrar bodegas' : 'Gestionar bodegas'}
                   </button>
                 </div>
-              </td>
+              </td>}
             </tr>
-            {managingProjectId === p.id && (
+            {canOperate && managingProjectId === p.id && (
               <tr className="project-assignment-row">
                 <td colSpan={6}>
                   <section className="assignment-manager">
