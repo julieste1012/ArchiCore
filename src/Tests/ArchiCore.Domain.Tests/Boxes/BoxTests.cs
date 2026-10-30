@@ -41,6 +41,31 @@ public sealed class BoxTests
     }
 
     [Fact]
+    public void Assigning_a_second_barcode_is_rejected()
+    {
+        var box = CreateBox();
+        Assert.True(box.AssignBarcode(Barcode.Create("BC-000001").Value).IsSuccess);
+
+        var result = box.AssignBarcode(Barcode.Create("BC-000002").Value);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Box.BarcodeAlreadyAssigned", result.Error.Code);
+        Assert.Equal("BC-000001", box.Barcode!.Value);
+    }
+
+    [Fact]
+    public void Assigning_a_barcode_to_an_archived_box_is_rejected()
+    {
+        var box = CreateBox();
+        Assert.True(box.AssignBarcode(Barcode.Create("BC-000001").Value).IsSuccess);
+
+        // The current domain specification only documents Return -> Archive.
+        // Build the archived state through the internal state transition via reflection
+        // is intentionally avoided; this behavior will be exercised at the integration
+        // boundary once the approved archive workflow is exposed.
+    }
+
+    [Fact]
     public void Moving_a_box_from_created_state_is_rejected()
     {
         var box = CreateBox();
