@@ -13,7 +13,7 @@ const contractLifecycleActions: LifecycleActionSpec[] = [
   { fromStatus: 'Suspended', endpoint: 'activate', label: 'Reactivar', successStatus: 'Activo' },
 ];
 
-export function ContractsPage() {
+type ContractsPageProps = { canManage?: boolean };\n\nexport function ContractsPage({ canManage = true }: ContractsPageProps) {
   const [data, setData] = useState<PagedResult<Contract> | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [busy, setBusy] = useState(true);
@@ -34,16 +34,19 @@ export function ContractsPage() {
   async function load() {
     setBusy(true); setError('');
     try {
-      const [contracts, clients] = await Promise.all([
-        api.get<PagedResult<Contract>>('/contracts?page=1&pageSize=100'),
-        api.get<PagedResult<Customer>>('/customers?page=1&pageSize=100'),
-      ]);
-      setData(contracts); setCustomers(clients.items);
-      if (!clientId && clients.items[0]) setClientId(clients.items[0].id);
+      const contracts = await api.get<PagedResult<Contract>>('/contracts?page=1&pageSize=100');
+      setData(contracts);
+      if (canManage) {
+        const clients = await api.get<PagedResult<Customer>>('/customers?page=1&pageSize=100');
+        setCustomers(clients.items);
+        if (!clientId && clients.items[0]) setClientId(clients.items[0].id);
+      } else {
+        setCustomers([]);
+      }
     } catch (caught) { setError(caught instanceof ApiError ? caught.message : 'No se pudieron consultar los contratos.'); }
     finally { setBusy(false); }
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [canManage]);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setError(''); setSuccess('');
@@ -111,9 +114,9 @@ export function ContractsPage() {
   const rows = (data?.items ?? []).filter((c) => !search || c.contractNumber.toLowerCase().includes(search.toLowerCase()));
   return (
     <>
-      <ModuleHeader eyebrow="RELACIÓN COMERCIAL" title="Contratos" description="Acuerdos que organizan los servicios y la ejecución documental." action={<><button className="secondary-button" onClick={() => void load()}><RefreshCw size={16} /> Actualizar</button><button className="primary-button" onClick={() => setShowCreate((v) => !v)}><Plus size={17} /> Nuevo contrato</button></>} />
+      <ModuleHeader eyebrow="RELACIÓN COMERCIAL" title="Contratos" description="Acuerdos que organizan los servicios y la ejecución documental." action={<><button className="secondary-button" onClick={() => void load()}><RefreshCw size={16} /> Actualizar</button>{canManage && <button className="primary-button" onClick={() => setShowCreate((v) => !v)}><Plus size={17} /> Nuevo contrato</button>}</>} />
       {error && <ErrorMessage>{error}</ErrorMessage>}{success && <SuccessMessage>{success}</SuccessMessage>}
-      {showCreate && <section className="content-card create-card"><div className="section-heading"><div><p className="eyebrow">ALTA DE CONTRATO</p><h2>Datos comerciales</h2></div><button className="icon-button" aria-label="Cerrar formulario" onClick={() => setShowCreate(false)}><X size={18} /></button></div>
+      {canManage && showCreate && <section className="content-card create-card"><div className="section-heading"><div><p className="eyebrow">ALTA DE CONTRATO</p><h2>Datos comerciales</h2></div><button className="icon-button" aria-label="Cerrar formulario" onClick={() => setShowCreate(false)}><X size={18} /></button></div>
         {customers.length === 0 ? <ErrorMessage>Registra primero un cliente para poder asociar un contrato.</ErrorMessage> :
         <form className="form-grid" onSubmit={create}>
           <div><label htmlFor="contract-number">Número de contrato</label><input id="contract-number" required value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="CTR-2026-000001" /></div>
@@ -126,7 +129,7 @@ export function ContractsPage() {
       </section>}
       <section className="content-card table-card"><div className="table-toolbar"><div><h2>Contratos registrados</h2><p>{data?.totalCount ?? 0} registros en el sistema</p></div><label className="search-field"><Search size={16} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar número" aria-label="Buscar contrato" /></label></div>
         {busy ? <LoadingState label="Consultando contratos…" /> : rows.length === 0 ? <div className="empty-state"><FileCheck2 size={25} /><strong>No hay contratos que mostrar</strong><span>Registra un contrato asociado a un cliente.</span></div> :
-        <div className="table-scroll"><table><thead><tr><th>CONTRATO</th><th>CLIENTE</th><th>VALOR</th><th>ESTADO</th><th>INICIO</th><th>ACCIONES</th></tr></thead><tbody>{rows.map((c) => <tr key={c.id}><td><span className="table-avatar table-avatar-blue"><FileCheck2 size={17} /></span><span className="main-cell"><strong>{c.contractNumber}</strong><small>ID {c.id.slice(0, 8).toUpperCase()}</small></span></td><td>{customers.find((cl) => cl.id === c.clientId)?.nit ?? c.clientId.slice(0, 8)}</td><td><strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: c.currency, maximumFractionDigits: 0 }).format(c.totalValue)}</strong></td><td><StatusBadge status={c.status} /></td><td>{new Date(c.startDate).toLocaleDateString('es-CO')}</td><td>
+        <div className="table-scroll"><table><thead><tr><th>CONTRATO</th><th>CLIENTE</th><th>VALOR</th><th>ESTADO</th><th>INICIO</th>{canManage && <th>ACCIONES</th>}</tr></thead><tbody>{rows.map((c) => <tr key={c.id}><td><span className="table-avatar table-avatar-blue"><FileCheck2 size={17} /></span><span className="main-cell"><strong>{c.contractNumber}</strong><small>ID {c.id.slice(0, 8).toUpperCase()}</small></span></td><td>{customers.find((cl) => cl.id === c.clientId)?.nit ?? c.clientId.slice(0, 8)}</td><td><strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: c.currency, maximumFractionDigits: 0 }).format(c.totalValue)}</strong></td><td><StatusBadge status={c.status} /></td><td>{new Date(c.startDate).toLocaleDateString('es-CO')}</td>{canManage && <td>
           <div className="contract-row-actions">
             <LifecycleActions status={c.status} actions={contractLifecycleActions} busy={transitioningId === c.id} onAction={(action) => void transition(c, action)} />
             {c.status === 'Active' && <button type="button" className="table-action" disabled={transitioningId === c.id} onClick={() => { setFinishDate(new Date().toISOString().slice(0, 10)); setFinishingContractId((current) => current === c.id ? null : c.id); }}><FileCheck2 size={14} /> Finalizar</button>}
@@ -136,7 +139,7 @@ export function ContractsPage() {
             <input id={`finish-date-${c.id}`} type="date" required min={new Date(c.startDate).toISOString().slice(0, 10)} value={finishDate} onChange={(event) => setFinishDate(event.target.value)} />
             <div><button className="primary-button" type="submit" disabled={transitioningId === c.id}>{transitioningId === c.id ? 'Guardando…' : 'Confirmar'}</button><button type="button" className="secondary-button" onClick={() => setFinishingContractId(null)}>Cancelar</button></div>
           </form>}
-        </td></tr>)}</tbody></table></div>}
+        </td>}</tr>)}</tbody></table></div>}
       </section>
     </>
   );
