@@ -12,7 +12,7 @@ const zeroStats: DashboardStats = { customers: 0, contracts: 0, projects: 0, war
 
 const resourcesByRole: Record<string, Array<[ResourceKey, string]>> = {
   SystemAdministrator: [
-    ['customers', '/customers'], ['contracts', '/contracts'], ['projects', '/projects'], ['warehouses', '/warehouses'], ['receptions', '/receptions'], ['boxes', '/boxes'], ['boxes', '/boxes'],
+    ['customers', '/customers'], ['contracts', '/contracts'], ['projects', '/projects'], ['warehouses', '/warehouses'], ['receptions', '/receptions'], ['boxes', '/boxes'], ['boxes', '/boxes'], ['boxes', '/boxes'],
   ],
   AdministrativeManager: [
     ['customers', '/customers'], ['contracts', '/contracts'], ['projects', '/projects'],
