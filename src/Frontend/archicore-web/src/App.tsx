@@ -27,7 +27,7 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
 const roleViewAccess: Record<string, ViewKey[]> = {
   SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'users', 'audit', 'password'],
   AdministrativeManager: ['dashboard', 'customers', 'contracts', 'projects', 'password'],
-  ProjectCoordinator: ['dashboard', 'projects', 'warehouses', 'password'],
+  ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'password'],
   ArchiveTechnician: ['dashboard', 'password'],
   ArchiveAssistant: ['dashboard', 'warehouses', 'password'],
   DigitizationOperator: ['dashboard', 'password'],
@@ -61,9 +61,9 @@ export function App() {
   const viewContent = (() => {
     switch (activeView) {
       case 'customers': return <CustomersPage />;
-      case 'contracts': return <ContractsPage />;
-      case 'projects': return <ProjectsPage />;
-      case 'warehouses': return <WarehousesPage />;
+      case 'contracts': return <ContractsPage canManage={user.role === 'SystemAdministrator' || user.role === 'AdministrativeManager'} />;
+      case 'projects': return <ProjectsPage canOperate={user.role === 'SystemAdministrator' || user.role === 'ProjectCoordinator'} />;
+      case 'warehouses': return <WarehousesPage canManage={user.role === 'SystemAdministrator'} />;
       case 'users': return <UsersPage />;
       case 'audit': return <AuditPage />;
       case 'password': return <ChangePasswordForm onComplete={() => void logout()} />;
@@ -84,7 +84,7 @@ export function App() {
               <p className="nav-section-label">{group.section}</p>
               {visibleNavItems.filter((item) => item.section === group.section).map(({ id, label, icon: Icon }) => (
                 <button key={id} className={`nav-item ${activeView === id ? 'nav-item-active' : ''}`} onClick={() => setView(id)}>
-                  <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{view === id && <span className="nav-active-dot" />}
+                  <Icon size={18} strokeWidth={1.8} /><span>{label}</span>{activeView === id && <span className="nav-active-dot" />}
                 </button>
               ))}
             </div>
