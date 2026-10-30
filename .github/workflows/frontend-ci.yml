@@ -1,0 +1,35 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "src/Frontend/archicore-web/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "src/Frontend/archicore-web/**"
+      - ".github/workflows/frontend-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Typecheck and build React frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Frontend/archicore-web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and production build
+        run: npm run build

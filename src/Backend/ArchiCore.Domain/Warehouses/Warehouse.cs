@@ -21,6 +21,11 @@ public sealed class Warehouse : Entity, IAggregateRoot
     /// </summary>
     public WarehouseStatus Status { get; private set; }
 
+    private Warehouse()
+    {
+        WarehouseCode = null!;
+    }
+
     private Warehouse(WarehouseCode warehouseCode)
     {
         WarehouseCode = warehouseCode;

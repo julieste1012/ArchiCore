@@ -46,6 +46,11 @@ public sealed class Project : Entity, IAggregateRoot
     /// </summary>
     public IReadOnlyCollection<ProjectWarehouseAssignment> WarehouseAssignments => _warehouseAssignments.AsReadOnly();
 
+    private Project()
+    {
+        ProjectCode = null!;
+    }
+
     private Project(ProjectCode projectCode, Guid contractId)
     {
         ProjectCode = projectCode;
