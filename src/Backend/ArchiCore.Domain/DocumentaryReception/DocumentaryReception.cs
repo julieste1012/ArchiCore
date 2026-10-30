@@ -117,11 +117,12 @@ public sealed class DocumentaryReception : Entity, IAggregateRoot
             return Result.Success();
         }
 
+        var suspensionReason = observations!.Trim();
         Status = DocumentaryReceptionStatus.Suspended;
         SuspendedByUserId = inspectedByUserId;
         SuspendedAtUtc = InspectionCompletedAtUtc;
-        SuspensionReason = observations!.Trim();
-        AddDomainEvent(new DocumentaryReceptionSuspended(Id, inspectedByUserId, SuspensionReason));
+        SuspensionReason = suspensionReason;
+        AddDomainEvent(new DocumentaryReceptionSuspended(Id, inspectedByUserId, suspensionReason));
         return Result.Success();
     }
 
@@ -205,12 +206,13 @@ public sealed class DocumentaryReception : Entity, IAggregateRoot
             return Result.Failure(new Error(
                 "Reception.InvalidSuspensionReason", "A suspension reason between 1 and 1000 characters is required."));
 
+        var suspensionReason = reason.Trim();
         SuspendedByUserId = suspendedByUserId;
         SuspendedAtUtc = DateTime.UtcNow;
-        SuspensionReason = reason.Trim();
+        SuspensionReason = suspensionReason;
         Status = DocumentaryReceptionStatus.Suspended;
         MarkAsUpdated();
-        AddDomainEvent(new DocumentaryReceptionSuspended(Id, suspendedByUserId, SuspensionReason));
+        AddDomainEvent(new DocumentaryReceptionSuspended(Id, suspendedByUserId, suspensionReason));
         return Result.Success();
     }
 
