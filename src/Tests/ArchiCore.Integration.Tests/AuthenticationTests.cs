@@ -549,6 +549,17 @@ public sealed class AuthenticationTests(ApiFixture fixture) : ApiTestBase(fixtur
             entry.ActorUserId == target.Id
             && entry.TargetUserId == target.Id
             && entry.ActorRole == AppRoles.BillingAssistant);
+
+        using var logout = await anonymous.PostAsJsonAsync("/api/auth/logout",
+            new { refreshToken = session.RefreshToken }, Ct);
+        await AssertStatusAsync(HttpStatusCode.NoContent, logout);
+
+        var logoutAudit = await GetJsonAsync<PagedResponse<SecurityAuditResponse>>(
+            "/api/audit/security-events?action=Authentication.Logout&outcome=Succeeded&page=1&pageSize=100");
+        Assert.Contains(logoutAudit.Items, entry =>
+            entry.ActorUserId == target.Id
+            && entry.TargetUserId == target.Id
+            && entry.ActorRole == AppRoles.BillingAssistant);
     }
 
     [Fact]
