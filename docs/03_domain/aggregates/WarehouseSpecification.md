@@ -255,7 +255,7 @@ Las mismas utilizadas en `ContractSpecification.md`, `CustomerSpecification.md` 
 
 The current domain increment formalizes the following provisional physical hierarchy:
 
-Aisle -> Shelf -> Cabinet -> Position.
+Aisle -> Shelf -> Level -> Position.
 
 Only Position holds boxes. Position capacity is a positive integer. Location codes are unique within a Warehouse after trimming and case normalization. A box can occupy only one position within a Warehouse. A relocation validates target capacity before releasing the source and emits LocationReleased, LocationOccupied and BoxRelocated.
 
