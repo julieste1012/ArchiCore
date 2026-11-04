@@ -22,6 +22,28 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ArchiCore.Domain.Archives.Archive", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique();
+
+                    b.ToTable("Archives", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.Boxes.Box", b =>
                 {
                     b.Property<Guid>("Id")
@@ -131,6 +153,57 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.Digitization.DigitizationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CompletedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("StartedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FolderId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("DigitizationRequests", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
                 {
                     b.Property<Guid>("Id")
@@ -228,6 +301,118 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_DocumentaryReceptions_ContractId_ReceivedAtUtc");
 
                     b.ToTable("DocumentaryReceptions", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Domain.Folders.Folder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ArchiveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BoxId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ExpedientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FolderCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("LoanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArchiveId");
+
+                    b.HasIndex("BoxId");
+
+                    b.HasIndex("ExpedientId");
+
+                    b.HasIndex("FolderCode")
+                        .IsUnique();
+
+                    b.HasIndex("LoanId");
+
+                    b.ToTable("Folders", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Domain.Loans.Loan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("AuthorizedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("AuthorizedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeliveredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeliveredByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("OverdueDetectedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("RequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReturnedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReturnedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FolderId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("Status", "DueAtUtc");
+
+                    b.ToTable("Loans", (string)null);
                 });
 
             modelBuilder.Entity("ArchiCore.Domain.Projects.Project", b =>
@@ -510,6 +695,175 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("UserAccounts", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.Archives.Archive", b =>
+                {
+                    b.OwnsMany("ArchiCore.Domain.Archives.ArchiveSection", "Sections", b1 =>
+                        {
+                            b1.Property<Guid>("ArchiveId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Code")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)");
+
+                            b1.Property<DateTime>("CreatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasMaxLength(250)
+                                .HasColumnType("character varying(250)");
+
+                            b1.Property<DateTime?>("UpdatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.HasKey("ArchiveId", "Id");
+
+                            b1.HasIndex("ArchiveId", "Code")
+                                .IsUnique();
+
+                            b1.ToTable("ArchiveSections", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ArchiveId");
+
+                            b1.OwnsMany("ArchiCore.Domain.Archives.ArchiveSeries", "Series", b2 =>
+                                {
+                                    b2.Property<Guid>("ArchiveId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("SectionId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<string>("Code")
+                                        .IsRequired()
+                                        .HasMaxLength(50)
+                                        .HasColumnType("character varying(50)");
+
+                                    b2.Property<DateTime>("CreatedAt")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired()
+                                        .HasMaxLength(250)
+                                        .HasColumnType("character varying(250)");
+
+                                    b2.Property<DateTime?>("UpdatedAt")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.HasKey("ArchiveId", "SectionId", "Id");
+
+                                    b2.HasIndex("ArchiveId", "SectionId", "Code")
+                                        .IsUnique();
+
+                                    b2.ToTable("ArchiveSeries", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ArchiveId", "SectionId");
+
+                                    b2.OwnsMany("ArchiCore.Domain.Archives.ArchiveSubseries", "Subseries", b3 =>
+                                        {
+                                            b3.Property<Guid>("ArchiveId")
+                                                .HasColumnType("uuid");
+
+                                            b3.Property<Guid>("SectionId")
+                                                .HasColumnType("uuid");
+
+                                            b3.Property<Guid>("SeriesId")
+                                                .HasColumnType("uuid");
+
+                                            b3.Property<Guid>("Id")
+                                                .HasColumnType("uuid");
+
+                                            b3.Property<string>("Code")
+                                                .IsRequired()
+                                                .HasMaxLength(50)
+                                                .HasColumnType("character varying(50)");
+
+                                            b3.Property<DateTime>("CreatedAt")
+                                                .HasColumnType("timestamp with time zone");
+
+                                            b3.Property<string>("Name")
+                                                .IsRequired()
+                                                .HasMaxLength(250)
+                                                .HasColumnType("character varying(250)");
+
+                                            b3.Property<DateTime?>("UpdatedAt")
+                                                .HasColumnType("timestamp with time zone");
+
+                                            b3.HasKey("ArchiveId", "SectionId", "SeriesId", "Id");
+
+                                            b3.HasIndex("ArchiveId", "SectionId", "SeriesId", "Code")
+                                                .IsUnique();
+
+                                            b3.ToTable("ArchiveSubseries", (string)null);
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("ArchiveId", "SectionId", "SeriesId");
+
+                                            b3.OwnsMany("ArchiCore.Domain.Archives.Expedient", "Expedients", b4 =>
+                                                {
+                                                    b4.Property<Guid>("ArchiveId")
+                                                        .HasColumnType("uuid");
+
+                                                    b4.Property<Guid>("SectionId")
+                                                        .HasColumnType("uuid");
+
+                                                    b4.Property<Guid>("SeriesId")
+                                                        .HasColumnType("uuid");
+
+                                                    b4.Property<Guid>("SubseriesId")
+                                                        .HasColumnType("uuid");
+
+                                                    b4.Property<Guid>("Id")
+                                                        .HasColumnType("uuid");
+
+                                                    b4.Property<DateTime>("CreatedAt")
+                                                        .HasColumnType("timestamp with time zone");
+
+                                                    b4.Property<string>("Reference")
+                                                        .IsRequired()
+                                                        .HasMaxLength(100)
+                                                        .HasColumnType("character varying(100)");
+
+                                                    b4.Property<string>("Title")
+                                                        .IsRequired()
+                                                        .HasMaxLength(300)
+                                                        .HasColumnType("character varying(300)");
+
+                                                    b4.Property<DateTime?>("UpdatedAt")
+                                                        .HasColumnType("timestamp with time zone");
+
+                                                    b4.HasKey("ArchiveId", "SectionId", "SeriesId", "SubseriesId", "Id");
+
+                                                    b4.HasIndex("ArchiveId", "SectionId", "SeriesId", "SubseriesId", "Reference")
+                                                        .IsUnique();
+
+                                                    b4.ToTable("ArchiveExpedients", (string)null);
+
+                                                    b4.WithOwner()
+                                                        .HasForeignKey("ArchiveId", "SectionId", "SeriesId", "SubseriesId");
+                                                });
+
+                                            b3.Navigation("Expedients");
+                                        });
+
+                                    b2.Navigation("Subseries");
+                                });
+
+                            b1.Navigation("Series");
+                        });
+
+                    b.Navigation("Sections");
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.Boxes.Box", b =>
                 {
                     b.OwnsMany("ArchiCore.Domain.Boxes.BoxFolderReference", "FolderReferences", b1 =>
@@ -645,6 +999,62 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.Navigation("Contracts");
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.Digitization.DigitizationRequest", b =>
+                {
+                    b.OwnsMany("ArchiCore.Domain.Digitization.DigitizedFile", "Files", b1 =>
+                        {
+                            b1.Property<Guid>("DigitizationRequestId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("ContentType")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<DateTime>("CreatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<string>("OriginalFileName")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)");
+
+                            b1.Property<int>("PageCount")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Sha256")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<long>("SizeBytes")
+                                .HasColumnType("bigint");
+
+                            b1.Property<string>("StorageObjectKey")
+                                .IsRequired()
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)");
+
+                            b1.Property<DateTime?>("UpdatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.HasKey("DigitizationRequestId", "Id");
+
+                            b1.HasIndex("DigitizationRequestId", "StorageObjectKey")
+                                .IsUnique();
+
+                            b1.ToTable("DigitizedFiles", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("DigitizationRequestId");
+                        });
+
+                    b.Navigation("Files");
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
                 {
                     b.HasOne("ArchiCore.Domain.Contracts.Contract", null)
@@ -658,6 +1068,112 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ArchiCore.Domain.Folders.Folder", b =>
+                {
+                    b.OwnsMany("ArchiCore.Domain.Folders.FolderDocument", "Documents", b1 =>
+                        {
+                            b1.Property<Guid>("FolderId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid");
+
+                            b1.Property<DateTime>("CreatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTime?>("DocumentDate")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<string>("Title")
+                                .IsRequired()
+                                .HasMaxLength(300)
+                                .HasColumnType("character varying(300)");
+
+                            b1.Property<DateTime?>("UpdatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.HasKey("FolderId", "Id");
+
+                            b1.ToTable("FolderDocuments", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("FolderId");
+
+                            b1.OwnsMany("ArchiCore.Domain.Folders.Annex", "Annexes", b2 =>
+                                {
+                                    b2.Property<Guid>("FolderId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("DocumentId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<DateTime>("CreatedAt")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.Property<int>("Sequence")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Title")
+                                        .IsRequired()
+                                        .HasMaxLength(250)
+                                        .HasColumnType("character varying(250)");
+
+                                    b2.Property<DateTime?>("UpdatedAt")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.HasKey("FolderId", "DocumentId", "Id");
+
+                                    b2.HasIndex("FolderId", "DocumentId", "Sequence")
+                                        .IsUnique();
+
+                                    b2.ToTable("DocumentAnnexes", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FolderId", "DocumentId");
+                                });
+
+                            b1.OwnsMany("ArchiCore.Domain.Folders.Folio", "Folios", b2 =>
+                                {
+                                    b2.Property<Guid>("FolderId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("DocumentId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<DateTime>("CreatedAt")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.Property<int>("Number")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<DateTime?>("UpdatedAt")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.HasKey("FolderId", "DocumentId", "Id");
+
+                                    b2.HasIndex("FolderId", "DocumentId", "Number")
+                                        .IsUnique();
+
+                                    b2.ToTable("DocumentFolios", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("FolderId", "DocumentId");
+                                });
+
+                            b1.Navigation("Annexes");
+
+                            b1.Navigation("Folios");
+                        });
+
+                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("ArchiCore.Domain.Projects.Project", b =>
