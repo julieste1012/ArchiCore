@@ -128,7 +128,7 @@ public sealed class Box : Entity, IAggregateRoot
     {
         if (Status != BoxStatus.InStorage)
             return Result.Failure(new Error("Box.InvalidFolderRemovalState", "Las carpetas solo pueden retirarse de una caja almacenada."));
-        if (!_folderReferences.RemoveAll(item => item.FolderId == folderId) > 0)
+        if (_folderReferences.RemoveAll(item => item.FolderId == folderId) == 0)
             return Result.Failure(new Error("Box.FolderNotFound", "La carpeta no está asociada a esta caja."));
 
         MarkAsUpdated();
