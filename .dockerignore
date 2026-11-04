@@ -1,0 +1,14 @@
+.git
+.vs
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/TestResults/
+**/coverage/
+**/App_Data/Objects/
+.env
+.env.*
+**/*.user
+**/*.suo
+**/*.log

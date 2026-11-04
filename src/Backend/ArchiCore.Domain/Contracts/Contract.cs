@@ -47,6 +47,12 @@ public sealed class Contract : Entity, IAggregateRoot
     /// </summary>
     public IReadOnlyCollection<ContractProjectReference> Projects => _projects.AsReadOnly();
 
+    private Contract()
+    {
+        ContractNumber = null!;
+        TotalValue = null!;
+    }
+
     private Contract(ContractNumber contractNumber, Guid clientId, DateTime startDate, Money totalValue)
     {
         ContractNumber = contractNumber;

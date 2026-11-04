@@ -27,6 +27,11 @@ public sealed class Customer : Entity, IAggregateRoot
     /// </summary>
     public IReadOnlyCollection<CustomerContractReference> Contracts => _contracts.AsReadOnly();
 
+    private Customer()
+    {
+        Nit = null!;
+    }
+
     private Customer(Nit nit)
     {
         Nit = nit;

@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Backend/ArchiCore.Domain/ArchiCore.Domain.csproj" />
+    <ProjectReference Include="../../Backend/ArchiCore.Infrastructure/ArchiCore.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
