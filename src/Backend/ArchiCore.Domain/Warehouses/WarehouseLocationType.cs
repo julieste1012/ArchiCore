@@ -4,6 +4,6 @@ public enum WarehouseLocationType
 {
     Aisle,
     Shelf,
-    Cabinet,
+    Level,
     Position
 }
