@@ -114,7 +114,7 @@ public sealed class DigitizationRequest : Entity, IAggregateRoot
 
             if (string.IsNullOrWhiteSpace(file.ContentType)
                 || file.ContentType.Trim().Length > 128
-                || !file.ContentType.Contains('/', StringComparison.Ordinal))
+                || !file.ContentType.Contains('/'))
                 return Result.Failure(new Error("Digitization.InvalidContentType", "El tipo MIME debe estar informado y tener el formato tipo/subtipo."));
 
             if (file.SizeBytes <= 0)
