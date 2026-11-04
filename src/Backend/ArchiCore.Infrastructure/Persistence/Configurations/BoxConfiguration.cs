@@ -23,7 +23,7 @@ internal sealed class BoxConfiguration : IEntityTypeConfiguration<Box>
         builder.HasIndex(x => x.BoxCode).IsUnique();
 
         builder.Property(x => x.Barcode)
-            .HasConversion(DomainValueConverters.BarcodeConverter)
+            .HasConversion(DomainValueConverters.NullableBarcodeConverter)
             .HasMaxLength(100);
         builder.HasIndex(x => x.Barcode).IsUnique();
 
