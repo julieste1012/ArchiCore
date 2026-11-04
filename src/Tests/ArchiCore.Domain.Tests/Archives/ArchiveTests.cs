@@ -18,21 +18,28 @@ public sealed class ArchiveTests
     }
 
     [Fact]
-    public void Classification_hierarchy_requires_parent_and_enforces_unique_codes()
+    public void Archival_classification_follows_fund_section_series_subseries_expedient()
     {
         var archive = Archive.Create(Guid.NewGuid()).Value;
-        var invalidSubseries = archive.AddSubseries(Guid.NewGuid(), "S-01", "Subserie");
-        Assert.True(invalidSubseries.IsFailure);
-        Assert.Equal("Archive.SeriesNotFound", invalidSubseries.Error.Code);
+        var invalidSeries = archive.AddSeries(Guid.NewGuid(), "S-01", "Serie");
+        Assert.True(invalidSeries.IsFailure);
+        Assert.Equal("Archive.SectionNotFound", invalidSeries.Error.Code);
 
-        var seriesId = archive.AddSeries("s-01", "Serie documental").Value;
-        var duplicateSeries = archive.AddSeries("S-01", "Duplicate");
+        var sectionId = archive.AddSection("SEC-01", "Sección Administrativa").Value;
+        var duplicateSection = archive.AddSection("sec-01", "Duplicada");
+        Assert.True(duplicateSection.IsFailure);
+        Assert.Equal("Archive.DuplicateSectionCode", duplicateSection.Error.Code);
+
+        var seriesId = archive.AddSeries(sectionId, "S-01", "Serie documental").Value;
+        var duplicateSeries = archive.AddSeries(sectionId, "s-01", "Duplicada");
         Assert.True(duplicateSeries.IsFailure);
         Assert.Equal("Archive.DuplicateSeriesCode", duplicateSeries.Error.Code);
 
         var subseriesId = archive.AddSubseries(seriesId, "SS-01", "Subserie documental").Value;
         var expedientId = archive.AddExpedient(subseriesId, "EXP-2026-001", "Expediente contractual").Value;
+
         Assert.True(archive.ContainsExpedient(expedientId));
+        Assert.Contains(archive.DomainEvents, item => item is SectionCreated);
         Assert.Contains(archive.DomainEvents, item => item is SeriesCreated);
         Assert.Contains(archive.DomainEvents, item => item is SubseriesCreated);
         Assert.Contains(archive.DomainEvents, item => item is ExpedientCreated);
@@ -42,7 +49,8 @@ public sealed class ArchiveTests
     public void Duplicate_expedient_reference_is_rejected_within_subseries()
     {
         var archive = Archive.Create(Guid.NewGuid()).Value;
-        var series = archive.AddSeries("S-01", "Serie").Value;
+        var section = archive.AddSection("SEC-01", "Sección").Value;
+        var series = archive.AddSeries(section, "S-01", "Serie").Value;
         var subseries = archive.AddSubseries(series, "SS-01", "Subserie").Value;
         Assert.True(archive.AddExpedient(subseries, "EXP-001", "Uno").IsSuccess);
 
