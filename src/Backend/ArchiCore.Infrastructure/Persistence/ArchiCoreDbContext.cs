@@ -33,10 +33,6 @@ public sealed class ArchiCoreDbContext(DbContextOptions<ArchiCoreDbContext> opti
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<Loan> Loans => Set<Loan>();
     public DbSet<DigitizationRequest> DigitizationRequests => Set<DigitizationRequest>();
-    public DbSet<Archive> Archives => Set<Archive>();
-    public DbSet<Folder> Folders => Set<Folder>();
-    public DbSet<Loan> Loans => Set<Loan>();
-    public DbSet<DigitizationRequest> DigitizationRequests => Set<DigitizationRequest>();
     public DbSet<DocumentaryReception> DocumentaryReceptions => Set<DocumentaryReception>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<DomainEventAuditEntry> DomainEventAuditEntries => Set<DomainEventAuditEntry>();
