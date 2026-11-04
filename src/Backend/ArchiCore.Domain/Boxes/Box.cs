@@ -5,25 +5,17 @@ using ArchiCore.Domain.ValueObjects;
 namespace ArchiCore.Domain.Boxes;
 
 /// <summary>
-/// Aggregate Root que representa la unidad física de almacenamiento utilizada
-/// por MULTISERTEC para custodiar carpetas documentales.
+/// Aggregate Root que representa el contenedor físico de carpetas documentales.
 /// </summary>
 public sealed class Box : Entity, IAggregateRoot
 {
-    /// <summary>
-    /// Código de negocio de la caja.
-    /// </summary>
+    private readonly List<Guid> _folderIds = new();
+
     public BoxCode BoxCode { get; private set; }
-
-    /// <summary>
-    /// Código de barras físico de la caja.
-    /// </summary>
     public Barcode? Barcode { get; private set; }
-
-    /// <summary>
-    /// Estado actual de la caja.
-    /// </summary>
     public BoxStatus Status { get; private set; }
+    public Guid? WarehouseLocationId { get; private set; }
+    public IReadOnlyCollection<Guid> FolderIds => _folderIds.AsReadOnly();
 
     private Box(BoxCode boxCode)
     {
@@ -31,115 +23,142 @@ public sealed class Box : Entity, IAggregateRoot
         Status = BoxStatus.Created;
     }
 
-    /// <summary>
-    /// Crea una nueva caja en estado <see cref="BoxStatus.Created"/>.
-    /// </summary>
+    private Box()
+    {
+        BoxCode = null!;
+    }
+
     public static Result<Box> Create(BoxCode boxCode)
     {
         if (boxCode is null)
-        {
-            return Result.Failure<Box>(
-                new Error("Box.BoxCodeRequired", "El código de la caja es obligatorio."));
-        }
+            return Result.Failure<Box>(new Error("Box.BoxCodeRequired", "El código de la caja es obligatorio."));
 
         var box = new Box(boxCode);
-
         box.AddDomainEvent(new BoxCreated(box.Id, box.BoxCode.Value));
-
         return Result.Success(box);
     }
 
-    /// <summary>
-    /// Asigna el código de barras físico de la caja.
-    /// </summary>
     public Result AssignBarcode(Barcode barcode)
     {
+        if (Status != BoxStatus.Created)
+            return Result.Failure(new Error("Box.InvalidBarcodeAssignmentState", "El código de barras solo puede asignarse mientras la caja está en estado Created."));
         if (barcode is null)
-        {
-            return Result.Failure(
-                new Error("Box.BarcodeRequired", "El código de barras es obligatorio."));
-        }
+            return Result.Failure(new Error("Box.BarcodeRequired", "El código de barras es obligatorio."));
+        if (Barcode is not null)
+            return Result.Failure(new Error("Box.BarcodeAlreadyAssigned", "La caja ya tiene un código de barras asignado."));
 
         Barcode = barcode;
         MarkAsUpdated();
-        AddDomainEvent(new BarcodeAssigned(Id, Barcode.Value));
-
+        AddDomainEvent(new BarcodeAssigned(Id, barcode.Value));
         return Result.Success();
     }
 
-    /// <summary>
-    /// Reubica la caja desde el estado <see cref="BoxStatus.InStorage"/> hacia <see cref="BoxStatus.InTransit"/>.
-    /// </summary>
+    /// <summary>Created -> Available. Requiere que la caja tenga su barcode físico.</summary>
+    public Result MakeAvailable()
+    {
+        var validation = EnsureStatusIs(BoxStatus.Created, "Box.InvalidAvailabilityTransition", "Solo una caja Created puede pasar a Available.");
+        if (validation.IsFailure) return validation;
+        if (Barcode is null)
+            return Result.Failure(new Error("Box.BarcodeRequired", "La caja debe tener un código de barras antes de estar disponible."));
+
+        Status = BoxStatus.Available;
+        MarkAsUpdated();
+        AddDomainEvent(new BoxMadeAvailable(Id));
+        return Result.Success();
+    }
+
+    /// <summary>Available -> InStorage. La aplicación valida que la ubicación pertenezca a la bodega operativa.</summary>
+    public Result Store(Guid warehouseLocationId)
+    {
+        var validation = EnsureStatusIs(BoxStatus.Available, "Box.InvalidStorageTransition", "Solo una caja Available puede ingresar a almacenamiento.");
+        if (validation.IsFailure) return validation;
+        if (warehouseLocationId == Guid.Empty)
+            return Result.Failure(new Error("Box.WarehouseLocationRequired", "La ubicación física de almacenamiento es obligatoria."));
+
+        WarehouseLocationId = warehouseLocationId;
+        Status = BoxStatus.InStorage;
+        MarkAsUpdated();
+        AddDomainEvent(new BoxStored(Id, warehouseLocationId));
+        return Result.Success();
+    }
+
+    /// <summary>InStorage -> InTransit. La aplicación debe liberar la posición en Warehouse dentro de la misma transacción.</summary>
     public Result Move()
     {
-        var validation = EnsureStatusIs(
-            BoxStatus.InStorage,
-            "Box.InvalidMove",
-            "La caja solo puede reubicarse desde el estado InStorage.");
+        var validation = EnsureStatusIs(BoxStatus.InStorage, "Box.InvalidMove", "La caja solo puede salir de almacenamiento desde el estado InStorage.");
+        if (validation.IsFailure) return validation;
 
-        if (validation.IsFailure)
-        {
-            return validation;
-        }
-
+        var sourceLocationId = WarehouseLocationId;
+        WarehouseLocationId = null;
         Status = BoxStatus.InTransit;
         MarkAsUpdated();
-        AddDomainEvent(new BoxMoved(Id));
-
+        AddDomainEvent(new BoxMoved(Id, sourceLocationId));
         return Result.Success();
     }
 
-    /// <summary>
-    /// Registra el retorno de la caja desde el estado <see cref="BoxStatus.LoanProcess"/>.
-    /// </summary>
+    /// <summary>InTransit -> LoanProcess.</summary>
+    public Result StartLoanProcess()
+    {
+        var validation = EnsureStatusIs(BoxStatus.InTransit, "Box.InvalidLoanProcess", "El proceso de préstamo solo puede comenzar desde el estado InTransit.");
+        if (validation.IsFailure) return validation;
+
+        Status = BoxStatus.LoanProcess;
+        MarkAsUpdated();
+        AddDomainEvent(new BoxLoanProcessStarted(Id));
+        return Result.Success();
+    }
+
+    public Result AddFolder(Guid folderId)
+    {
+        if (Status != BoxStatus.InStorage)
+            return Result.Failure(new Error("Box.InvalidFolderAssignmentState", "Las carpetas solo pueden asociarse a una caja almacenada."));
+        if (folderId == Guid.Empty)
+            return Result.Failure(new Error("Box.FolderIdRequired", "El identificador de la carpeta es obligatorio."));
+        if (_folderIds.Contains(folderId))
+            return Result.Failure(new Error("Box.FolderAlreadyAssigned", "La carpeta ya está asociada a esta caja."));
+
+        _folderIds.Add(folderId);
+        MarkAsUpdated();
+        AddDomainEvent(new FolderAdded(Id, folderId));
+        return Result.Success();
+    }
+
+    public Result RemoveFolder(Guid folderId)
+    {
+        if (Status != BoxStatus.InStorage)
+            return Result.Failure(new Error("Box.InvalidFolderRemovalState", "Las carpetas solo pueden retirarse de una caja almacenada."));
+        if (!_folderIds.Remove(folderId))
+            return Result.Failure(new Error("Box.FolderNotFound", "La carpeta no está asociada a esta caja."));
+
+        MarkAsUpdated();
+        AddDomainEvent(new FolderRemoved(Id, folderId));
+        return Result.Success();
+    }
+
     public Result Return()
     {
-        var validation = EnsureStatusIs(
-            BoxStatus.LoanProcess,
-            "Box.InvalidReturn",
-            "La caja solo puede devolverse desde el estado LoanProcess.");
-
-        if (validation.IsFailure)
-        {
-            return validation;
-        }
+        var validation = EnsureStatusIs(BoxStatus.LoanProcess, "Box.InvalidReturn", "La caja solo puede devolverse desde el estado LoanProcess.");
+        if (validation.IsFailure) return validation;
 
         Status = BoxStatus.Returned;
         MarkAsUpdated();
         AddDomainEvent(new BoxReturned(Id));
-
         return Result.Success();
     }
 
-    /// <summary>
-    /// Archiva la caja desde el estado <see cref="BoxStatus.Returned"/>.
-    /// </summary>
     public Result Archive()
     {
-        var validation = EnsureStatusIs(
-            BoxStatus.Returned,
-            "Box.InvalidArchive",
-            "La caja solo puede archivarse desde el estado Returned.");
-
-        if (validation.IsFailure)
-        {
-            return validation;
-        }
+        var validation = EnsureStatusIs(BoxStatus.Returned, "Box.InvalidArchive", "La caja solo puede archivarse desde el estado Returned.");
+        if (validation.IsFailure) return validation;
+        if (_folderIds.Count > 0)
+            return Result.Failure(new Error("Box.FoldersRemainAssigned", "No se puede archivar una caja que todavía contiene carpetas."));
 
         Status = BoxStatus.Archived;
         MarkAsUpdated();
         AddDomainEvent(new BoxArchived(Id));
-
         return Result.Success();
     }
 
     private Result EnsureStatusIs(BoxStatus expected, string errorCode, string errorMessage)
-    {
-        if (Status != expected)
-        {
-            return Result.Failure(new Error(errorCode, errorMessage));
-        }
-
-        return Result.Success();
-    }
+        => Status != expected ? Result.Failure(new Error(errorCode, errorMessage)) : Result.Success();
 }
