@@ -54,6 +54,11 @@ public static class DependencyInjection
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+        services.AddScoped<IArchiveRepository, ArchiveRepository>();
+        services.AddScoped<IFolderRepository, FolderRepository>();
+        services.AddScoped<IBoxRepository, BoxRepository>();
+        services.AddScoped<ILoanRepository, LoanRepository>();
+        services.AddScoped<IDigitizationRequestRepository, DigitizationRequestRepository>();
         services.AddScoped<IDomainEventAuditRepository, DomainEventAuditRepository>();
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
         services.AddScoped<IDocumentaryReceptionRepository, DocumentaryReceptionRepository>();
