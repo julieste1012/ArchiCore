@@ -30,6 +30,10 @@ internal static class DomainValueConverters
     public static readonly ValueConverter<Barcode, string> BarcodeConverter =
         new(value => value.Value, value => ToBarcode(value));
 
+    public static readonly ValueConverter<Barcode?, string?> NullableBarcodeConverter =
+        new(value => value == null ? null : value.Value,
+            value => value == null ? null : ToBarcode(value));
+
     private static Nit ToNit(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.Nit.Create(value), "NIT");
     private static ContractNumber ToContractNumber(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.ContractNumber.Create(value), "ContractNumber");
     private static ProjectCode ToProjectCode(string value) => EnsureValid(ArchiCore.Domain.ValueObjects.ProjectCode.Create(value), "ProjectCode");
