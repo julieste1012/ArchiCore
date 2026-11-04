@@ -55,6 +55,13 @@
 - Object keys must be relative, unique within the request and free of path traversal segments.
 - The application layer must verify that the folder belongs to the project, store and scan the bytes, validate actual MIME/checksum/page count, and persist object metadata consistently.
 
+## Persistence status
+
+- EF Core mappings and a versioned PostgreSQL migration now exist for Archive, Folder, Box, Warehouse physical locations, Loan and DigitizationRequest.
+- Repository contracts and EF-backed repository implementations are registered for Archive, Folder, Box, Loan and DigitizationRequest.
+- The current migration was generated from the actual EF model and the full backend test suite passed with zero failed and zero skipped tests.
+- The cross-aggregate application workflows, authenticated API endpoints and frontend screens are still pending; repositories alone do not make these capabilities available to users.
+
 ## Explicitly not implemented by this increment
 
 - Official AGN mandatory metadata, TRD/CCD versioning, retention schedules, disposition, expediente numbering and foliation exceptions.
