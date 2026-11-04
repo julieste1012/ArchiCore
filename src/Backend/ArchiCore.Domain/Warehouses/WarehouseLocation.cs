@@ -15,6 +15,11 @@ public sealed class WarehouseLocation : Entity
     public IReadOnlyCollection<Guid> BoxIds => _boxReferences.Select(item => item.BoxId).ToArray();
     public int OccupiedCapacity => _boxReferences.Count;
 
+    private WarehouseLocation()
+    {
+        Code = string.Empty;
+    }
+
     internal WarehouseLocation(string code, WarehouseLocationType type, Guid? parentLocationId, int? capacity)
     {
         Code = code;
@@ -33,7 +38,7 @@ public sealed class WarehouseLocation : Entity
             return Result.Failure(new Error("Warehouse.BoxIdRequired", "El identificador de la caja es obligatorio."));
         if (_boxReferences.Any(item => item.BoxId == boxId))
             return Result.Failure(new Error("Warehouse.BoxAlreadyInLocation", "La caja ya está registrada en esta ubicación."));
-        if (Capacity is null || _boxIds.Count >= Capacity.Value)
+        if (Capacity is null || _boxReferences.Count >= Capacity.Value)
             return Result.Failure(new Error("Warehouse.LocationCapacityExceeded", "La ubicación no tiene capacidad disponible para otra caja."));
         return Result.Success();
     }
