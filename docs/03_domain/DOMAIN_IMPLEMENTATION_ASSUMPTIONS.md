@@ -3,12 +3,32 @@
 | Field | Value |
 |---|---|
 | Status | Technical assumptions for implementation; not business approval |
-| Reviewed | 2026-11-03 |
+| Reviewed | 2026-11-04 |
 | Active branch | feat/documentary-domain-foundation |
 
-## Purpose
+## Archive and documentary hierarchy
 
-This register makes explicit the technical assumptions used to progress where existing drafts are incomplete or contradictory. It does not claim that the business owner has formally approved these rules. Any future business decision can supersede an assumption through a documented specification/ADR update and a controlled migration.
+- Archive is an Aggregate Root associated with one Project. Uniqueness of one Archive per Project must be enforced by persistence/application validation before release.
+- Archive owns the classification catalog Series -> Subseries -> Expedient.
+- Series and Subseries codes are unique within their parent; Expedient references are unique within their Subseries.
+- Expedient stores a user-supplied reference and title. The reference is not an official AGN numbering scheme.
+- Folder remains an independent Aggregate Root, following its standalone specification. It references ArchiveId and ExpedientId by identity.
+- Folder owns its Document entities; each Document owns its Folio and Annex entities.
+- Box remains an Aggregate Root and maintains Folder IDs as references. Folder stores its current BoxId. A database unique constraint on active Folder-to-Box assignment and an application transaction must keep both sides consistent.
+- A Folder cannot be created until the application layer confirms that ExpedientId belongs to ArchiveId and that both belong to the intended Project.
+- Document title is required; document date is optional. Official AGN metadata remains outside this minimum implementation.
+- Folio numbering starts at 1 and increments consecutively within each Document. Annexes are appended after the folio sequence. This is a technical placeholder, not a substitute for official foliation rules.
+
+## Box lifecycle
+
+- Box remains an Aggregate Root despite the older DomainMap classifying it as an Entity; this follows the dedicated Box aggregate specification.
+- A barcode can be assigned once, only while Box is Created.
+- Created -> Available requires a barcode.
+- Available -> InStorage requires a WarehouseLocation identity. The Application use case must atomically occupy that location inside Warehouse and update Box.
+- InStorage -> InTransit represents removing the box from its current physical location for a movement/loan workflow. The Application use case must release occupancy in Warehouse in the same transaction.
+- InTransit -> LoanProcess -> Returned -> Archived completes the documented loan-related box lifecycle.
+- Box retains folder identity references when archived for historical traceability.
+- Box stores only Folder IDs. Existence, unique current membership and atomic coordination with Folder.BoxId must be enforced by Application/Infrastructure.
 
 ## Warehouse physical hierarchy
 
@@ -21,7 +41,7 @@ This register makes explicit the technical assumptions used to progress where ex
 - A position cannot exceed its configured capacity.
 - Moving a box between positions in one warehouse validates destination capacity before releasing the source and emits release, occupy and relocation events.
 - A warehouse cannot close or archive while any position still contains a box.
-- Cross-warehouse movement must be coordinated by an application use case and a database transaction; it is not provided by this domain increment.
+- Cross-warehouse movement must be coordinated by an application use case and a database transaction.
 
 ## Digitization
 
@@ -37,10 +57,11 @@ This register makes explicit the technical assumptions used to progress where ex
 
 ## Explicitly not implemented by this increment
 
-- Official AGN mandatory metadata, classification schedules, expediente numbering and foliation exceptions.
-- Final aggregate boundaries among Archive, Folder, Box, Document and Folio.
+- Official AGN mandatory metadata, TRD/CCD versioning, retention schedules, disposition, expediente numbering and foliation exceptions.
+- Loan Aggregate lifecycle, authorizations, due dates, partial returns, overdue policy and notifications.
+- Full cross-aggregate transactional use cases for Warehouse/Box/Folder assignment and movements.
+- EF Core mappings, migrations, repositories, API endpoints and frontend screens for Archive, Folder, WarehouseLocation and DigitizationRequest.
 - Digitization rejection, cancellation, rework, approval, SLA and operator assignment policies.
 - File retention, legal holds, OCR, PDF/A conversion, signatures or digital preservation requirements.
-- EF Core mappings, migrations, repositories, API endpoints and frontend screens for WarehouseLocation and DigitizationRequest.
 
 These are tracked implementation gaps, not silently assumed as completed requirements.
