@@ -119,18 +119,21 @@ public sealed class BoxTests
     }
 
     [Fact]
-    public void A_box_with_assigned_folders_cannot_be_archived()
+    public void A_box_can_be_archived_while_preserving_its_folder_history()
     {
         var box = CreateStoredBox();
-        Assert.True(box.AddFolder(Guid.NewGuid()).IsSuccess);
+        var folderId = Guid.NewGuid();
+        Assert.True(box.AddFolder(folderId).IsSuccess);
         Assert.True(box.Move().IsSuccess);
         Assert.True(box.StartLoanProcess().IsSuccess);
         Assert.True(box.Return().IsSuccess);
 
         var result = box.Archive();
 
-        Assert.True(result.IsFailure);
-        Assert.Equal("Box.FoldersRemainAssigned", result.Error.Code);
-        Assert.Equal(BoxStatus.Returned, box.Status);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(BoxStatus.Archived, box.Status);
+        Assert.Contains(folderId, box.FolderIds);
+        Assert.True(box.AddFolder(Guid.NewGuid()).IsFailure);
+        Assert.True(box.RemoveFolder(folderId).IsFailure);
     }
 }
