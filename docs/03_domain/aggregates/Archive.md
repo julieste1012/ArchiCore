@@ -144,3 +144,22 @@ Folder is maintained as an independent Aggregate Root and references ArchiveId a
 This is a provisional technical boundary resolving contradictory classifications found in DomainMap, Folder.md and Box.md. It requires business/architectural review before production release. It does not define TRD/CCD, retention, disposition or official AGN metadata.
 
 Events implemented by this classification increment: ArchiveCreated, SeriesCreated, SubseriesCreated, ExpedientCreated.
+
+
+---
+
+# Implementation Addendum 2.1 - Full classification hierarchy
+
+The Archive Aggregate Root represents the Project's Fondo documental. The implemented internal hierarchy now follows the source document:
+
+Fondo (Archive) -> Section -> Series -> Subseries -> Expedient.
+
+- Archive owns Sections.
+- Each ArchiveSection owns its Series.
+- Each ArchiveSeries owns its Subseries.
+- Each ArchiveSubseries owns its Expedients.
+- Folder remains an independent Aggregate Root referencing ArchiveId and ExpedientId by identity.
+
+The minimum implementation uses code/name for Section and Series, code/name for Subseries, and reference/title for Expedient. These fields provide an initial registration structure, not an approved TRD/CCD catalogue or official AGN identification format. Those metadata and code rules remain pending.
+
+Events: ArchiveCreated, SectionCreated, SeriesCreated, SubseriesCreated and ExpedientCreated.
