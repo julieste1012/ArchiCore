@@ -1,6 +1,7 @@
 using ArchiCore.Application.Abstractions.Persistence;
 using ArchiCore.Domain.Common;
 using ArchiCore.Domain.Contracts;
+using ArchiCore.Domain.Boxes;
 using ArchiCore.Domain.Customers;
 using ArchiCore.Domain.Events;
 using ArchiCore.Domain.DocumentaryReception;
@@ -19,6 +20,7 @@ public sealed class ArchiCoreDbContext(DbContextOptions<ArchiCoreDbContext> opti
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<Box> Boxes => Set<Box>();
     public DbSet<DocumentaryReception> DocumentaryReceptions => Set<DocumentaryReception>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<DomainEventAuditEntry> DomainEventAuditEntries => Set<DomainEventAuditEntry>();
