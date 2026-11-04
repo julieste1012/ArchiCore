@@ -1,4 +1,5 @@
 using ArchiCore.Application.Audit;
+using ArchiCore.Application.Documentary;
 using ArchiCore.Application.Receptions;
 using ArchiCore.Application.Contracts;
 using ArchiCore.Application.Customers;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<DomainEventAuditService>();
         services.AddScoped<SecurityAuditService>();
         services.AddScoped<DocumentaryReceptionService>();
+        services.AddScoped<DocumentaryWorkflowService>();
         return services;
     }
 }
