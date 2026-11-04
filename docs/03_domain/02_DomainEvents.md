@@ -3,10 +3,10 @@
 | Campo | Valor |
 |--------|-------|
 | Documento | 02_DomainEvents |
-| Versión | 1.0.0 |
+| Versión | 1.1.0 |
 | Estado | Draft |
 | Fase | 2 - Software Architecture |
-| Sprint | 2.2 |
+| Revisión | 2026-11-03 |
 
 ---
 
@@ -62,6 +62,66 @@ ContractClosed
 
 ---
 
+## Project Events
+
+ProjectCreated
+
+ProjectStarted
+
+ProjectSuspended
+
+ProjectResumed
+
+ProjectCompleted
+
+ProjectClosed
+
+ProjectArchived
+
+CoordinatorAssigned
+
+WarehouseAssigned
+
+WarehouseReleased
+
+---
+
+## Warehouse Events
+
+WarehouseCreated
+
+WarehouseActivated
+
+WarehouseClosed
+
+LocationCreated
+
+LocationOccupied
+
+LocationReleased
+
+BoxRelocated
+
+---
+
+## Box Events
+
+BoxCreated
+
+BarcodeAssigned
+
+FolderAdded
+
+FolderRemoved
+
+BoxMoved
+
+BoxReturned
+
+BoxArchived
+
+---
+
 ## Reception Events
 
 ReceptionStarted
@@ -86,9 +146,39 @@ CountingDiscrepancyDetected
 
 ## Documentary Events
 
-FolderRegistered
+ArchiveCreated
+
+SectionCreated
+
+SeriesCreated
+
+SubseriesCreated
+
+ExpedientCreated
+
+FolderCreated
+
+FolderReceived
+
+FolderOrganized
+
+FolderAssignedToBox
 
 DocumentRegistered
+
+FolioAdded
+
+FolderStored
+
+FolderMoved
+
+FolderLoaned
+
+FolderReturned
+
+FolderDigitized
+
+FolderArchived
 
 BarcodeAssigned
 
@@ -116,6 +206,8 @@ LoanOverdue
 
 DigitizationRequested
 
+DigitizationStarted
+
 DigitizationCompleted
 
 DigitalFileGenerated
@@ -132,7 +224,7 @@ InvoiceSent
 
 ---
 
-## Audit Principle
+# Audit Principle
 
 Every domain event must generate an audit entry.
 
@@ -143,3 +235,4 @@ Every domain event must generate an audit entry.
 | Version | Date | Description |
 |----------|------|-------------|
 |1.0.0|2026-07-11|Initial domain events catalog.|
+|1.1.0|2026-11-03|Added Warehouse location/relocation and Digitization Started event catalog.|
