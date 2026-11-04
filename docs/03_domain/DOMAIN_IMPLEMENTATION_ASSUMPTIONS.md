@@ -34,7 +34,7 @@
 
 - Warehouse remains the Aggregate Root.
 - WarehouseLocation is an internal Entity and can only be mutated through Warehouse.
-- The chosen hierarchy for the initial implementation is Aisle -> Shelf -> Cabinet -> Position.
+- The chosen hierarchy for the initial implementation is Aisle -> Shelf -> Level -> Position.
 - Only Position stores boxes. Its capacity is a positive integer; parent levels do not carry box capacity.
 - Location codes are unique within one warehouse, compared case-insensitively after trimming and uppercasing.
 - A box may occupy at most one position within the same warehouse.
