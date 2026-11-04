@@ -4,15 +4,16 @@ using ArchiCore.Domain.Common;
 namespace ArchiCore.Domain.Archives;
 
 /// <summary>
-/// Aggregate Root que mantiene la clasificación archivística de un proyecto.
-/// Las carpetas y cajas son agregados independientes que referencian las identidades de los expedientes.
+/// Aggregate Root que representa el Fondo documental de un Project.
+/// Su jerarquía interna sigue Section -> Series -> Subseries -> Expedient.
+/// Las carpetas y cajas son agregados independientes que referencian expedientes y ubicaciones por identidad.
 /// </summary>
 public sealed class Archive : Entity, IAggregateRoot
 {
-    private readonly List<ArchiveSeries> _series = new();
+    private readonly List<ArchiveSection> _sections = new();
 
     public Guid ProjectId { get; private set; }
-    public IReadOnlyCollection<ArchiveSeries> Series => _series.AsReadOnly();
+    public IReadOnlyCollection<ArchiveSection> Sections => _sections.AsReadOnly();
 
     private Archive() { }
     private Archive(Guid projectId) => ProjectId = projectId;
@@ -20,28 +21,51 @@ public sealed class Archive : Entity, IAggregateRoot
     public static Result<Archive> Create(Guid projectId)
     {
         if (projectId == Guid.Empty)
-            return Result.Failure<Archive>(new Error("Archive.ProjectRequired", "El archivo documental debe pertenecer a un proyecto."));
+            return Result.Failure<Archive>(new Error("Archive.ProjectRequired", "El Fondo documental debe pertenecer a un proyecto."));
 
         var archive = new Archive(projectId);
         archive.AddDomainEvent(new ArchiveCreated(archive.Id, projectId));
         return Result.Success(archive);
     }
 
-    public Result<Guid> AddSeries(string code, string name)
+    public Result<Guid> AddSection(string code, string name)
     {
         var validation = ValidateCodeAndName(code, name);
         if (validation.IsFailure)
             return Result.Failure<Guid>(validation.Error);
 
         var normalizedCode = code.Trim().ToUpperInvariant();
-        if (_series.Any(item => string.Equals(item.Code, normalizedCode, StringComparison.OrdinalIgnoreCase)))
-            return Result.Failure<Guid>(new Error("Archive.DuplicateSeriesCode", "El código de serie ya existe en este archivo."));
+        if (_sections.Any(item => string.Equals(item.Code, normalizedCode, StringComparison.OrdinalIgnoreCase)))
+            return Result.Failure<Guid>(new Error("Archive.DuplicateSectionCode", "El código de sección ya existe en este Fondo."));
 
-        var series = new ArchiveSeries(normalizedCode, name.Trim());
-        _series.Add(series);
+        var section = new ArchiveSection(normalizedCode, name.Trim());
+        _sections.Add(section);
         MarkAsUpdated();
-        AddDomainEvent(new SeriesCreated(Id, series.Id, series.Code, series.Name));
-        return Result.Success(series.Id);
+        AddDomainEvent(new SectionCreated(Id, section.Id, section.Code, section.Name));
+        return Result.Success(section.Id);
+    }
+
+    public Result<Guid> AddSeries(Guid sectionId, string code, string name)
+    {
+        if (sectionId == Guid.Empty)
+            return Result.Failure<Guid>(new Error("Archive.SectionRequired", "La sección documental es obligatoria."));
+
+        var validation = ValidateCodeAndName(code, name);
+        if (validation.IsFailure)
+            return Result.Failure<Guid>(validation.Error);
+
+        var section = _sections.FirstOrDefault(item => item.Id == sectionId);
+        if (section is null)
+            return Result.Failure<Guid>(new Error("Archive.SectionNotFound", "La sección no pertenece a este Fondo."));
+
+        var normalizedCode = code.Trim().ToUpperInvariant();
+        var result = section.AddSeries(normalizedCode, name.Trim());
+        if (result.IsFailure)
+            return result;
+
+        MarkAsUpdated();
+        AddDomainEvent(new SeriesCreated(Id, sectionId, result.Value, normalizedCode, name.Trim()));
+        return result;
     }
 
     public Result<Guid> AddSubseries(Guid seriesId, string code, string name)
@@ -53,9 +77,9 @@ public sealed class Archive : Entity, IAggregateRoot
         if (validation.IsFailure)
             return Result.Failure<Guid>(validation.Error);
 
-        var series = _series.FirstOrDefault(item => item.Id == seriesId);
+        var series = _sections.SelectMany(item => item.Series).FirstOrDefault(item => item.Id == seriesId);
         if (series is null)
-            return Result.Failure<Guid>(new Error("Archive.SeriesNotFound", "La serie no pertenece a este archivo."));
+            return Result.Failure<Guid>(new Error("Archive.SeriesNotFound", "La serie no pertenece a este Fondo."));
 
         var normalizedCode = code.Trim().ToUpperInvariant();
         var result = series.AddSubseries(normalizedCode, name.Trim());
@@ -76,9 +100,11 @@ public sealed class Archive : Entity, IAggregateRoot
         if (string.IsNullOrWhiteSpace(title) || title.Trim().Length > 300)
             return Result.Failure<Guid>(new Error("Archive.InvalidExpedientTitle", "El título del expediente es obligatorio y no puede superar 300 caracteres."));
 
-        var subseries = _series.SelectMany(item => item.Subseries).FirstOrDefault(item => item.Id == subseriesId);
+        var subseries = _sections.SelectMany(section => section.Series)
+            .SelectMany(series => series.Subseries)
+            .FirstOrDefault(item => item.Id == subseriesId);
         if (subseries is null)
-            return Result.Failure<Guid>(new Error("Archive.SubseriesNotFound", "La subserie no pertenece a este archivo."));
+            return Result.Failure<Guid>(new Error("Archive.SubseriesNotFound", "La subserie no pertenece a este Fondo."));
 
         var normalizedReference = reference.Trim();
         var result = subseries.AddExpedient(normalizedReference, title.Trim());
@@ -91,7 +117,10 @@ public sealed class Archive : Entity, IAggregateRoot
     }
 
     public bool ContainsExpedient(Guid expedientId)
-        => expedientId != Guid.Empty && _series.SelectMany(item => item.Subseries).Any(item => item.ContainsExpedient(expedientId));
+        => expedientId != Guid.Empty
+           && _sections.SelectMany(section => section.Series)
+               .SelectMany(series => series.Subseries)
+               .Any(subseries => subseries.ContainsExpedient(expedientId));
 
     private static Result ValidateCodeAndName(string code, string name)
     {
