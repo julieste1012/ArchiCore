@@ -64,6 +64,11 @@ internal sealed class LoanRepository(ArchiCoreDbContext dbContext) : ILoanReposi
     public Task<Loan?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => dbContext.Loans.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public Task<Loan?> GetActiveByFolderAsync(Guid folderId, CancellationToken cancellationToken = default)
+        => dbContext.Loans.SingleOrDefaultAsync(
+            x => x.FolderId == folderId && x.Status != LoanStatus.Returned,
+            cancellationToken);
+
     public async Task<IReadOnlyList<Loan>> ListByFolderAsync(Guid folderId, int skip, int take, CancellationToken cancellationToken = default)
         => await dbContext.Loans.AsNoTracking().Where(x => x.FolderId == folderId)
             .OrderByDescending(x => x.RequestedAtUtc).ThenBy(x => x.Id)
