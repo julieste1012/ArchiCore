@@ -81,7 +81,7 @@ public sealed class Warehouse : Entity, IAggregateRoot
         return Result.Success();
     }
 
-    /// <summary>Crea una ubicación hija siguiendo Aisle → Shelf → Cabinet → Position.</summary>
+    /// <summary>Crea una ubicación hija siguiendo Aisle → Shelf → Level → Position.</summary>
     public Result<Guid> AddLocation(string code, WarehouseLocationType type, Guid? parentLocationId = null, int? capacity = null)
     {
         if (Status is WarehouseStatus.Maintenance or WarehouseStatus.Closed or WarehouseStatus.Archived)
@@ -108,8 +108,8 @@ public sealed class Warehouse : Entity, IAggregateRoot
             var requiredParentType = type switch
             {
                 WarehouseLocationType.Shelf => WarehouseLocationType.Aisle,
-                WarehouseLocationType.Cabinet => WarehouseLocationType.Shelf,
-                WarehouseLocationType.Position => WarehouseLocationType.Cabinet,
+                WarehouseLocationType.Level => WarehouseLocationType.Shelf,
+                WarehouseLocationType.Position => WarehouseLocationType.Level,
                 _ => (WarehouseLocationType?)null
             };
             if (parent is null || parent.Type != requiredParentType)
