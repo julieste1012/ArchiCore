@@ -9,8 +9,8 @@
 ## Archive and documentary hierarchy
 
 - Archive is an Aggregate Root associated with one Project. Uniqueness of one Archive per Project must be enforced by persistence/application validation before release.
-- Archive owns the classification catalog Series -> Subseries -> Expedient.
-- Series and Subseries codes are unique within their parent; Expedient references are unique within their Subseries.
+- Archive represents the Project's Fonds (Fondo) and owns the classification catalog Section -> Series -> Subseries -> Expedient.
+- Section, Series and Subseries codes are unique within their parent; Expedient references are unique within their Subseries.
 - Expedient stores a user-supplied reference and title. The reference is not an official AGN numbering scheme.
 - Folder remains an independent Aggregate Root, following its standalone specification. It references ArchiveId and ExpedientId by identity.
 - Folder owns its Document entities; each Document owns its Folio and Annex entities.
