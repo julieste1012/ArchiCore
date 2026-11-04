@@ -15,7 +15,7 @@ Identificar los conceptos principales de ArchiCore y sus límites actuales de co
 - Folder
 - DocumentaryReception
 - DigitizationRequest
-- Loan (pendiente de implementación completa)
+- Loan
 - UserAccount (identidad/autenticación técnica, no sustituye el futuro agregado de personal)
 
 ## Entities internas

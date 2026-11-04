@@ -65,3 +65,17 @@
 - File retention, legal holds, OCR, PDF/A conversion, signatures or digital preservation requirements.
 
 These are tracked implementation gaps, not silently assumed as completed requirements.
+
+
+## Loan lifecycle
+
+- Loan is an Aggregate Root because the business language describes a controlled temporary checkout of a Folder with its own requester, authorization, dates and return.
+- Loan references Project and Folder by identity; it does not own the Folder or mutate it directly.
+- The implemented state machine is Requested -> Authorized -> Delivered -> Returned, with an optional Delivered -> Overdue -> Returned path.
+- DueAtUtc is required and must be after the request timestamp.
+- Authorization and delivery require identified users; role and project-scope authorization belongs to Application/API.
+- A delivered loan becomes overdue only when a background/application operation evaluates it after DueAtUtc. This increment does not schedule a worker or send notifications.
+- Return is allowed from Delivered or Overdue and records the receiving user and UTC timestamp.
+- Application must synchronize Loan.Start/Return operations with Folder.StartLoan/ReturnLoan in a single transaction.
+- Rejection, cancellation, renewal, partial return, maximum loan duration, working-day calculation, grace periods and escalation policy are not specified and remain unimplemented.
+
