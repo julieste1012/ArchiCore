@@ -29,7 +29,7 @@ Identificar los conceptos principales de ArchiCore y sus límites actuales de co
 - Customer -> Contract por ContractId
 - Contract -> Project por ProjectId
 - Project -> Archive por ProjectId
-- Archive -> Expedient (árbol interno de clasificación)
+- Archive -> Section -> Series -> Subseries -> Expedient (árbol interno de clasificación)
 - Folder -> ArchiveId + ExpedientId
 - Folder -> BoxId
 - Box -> FolderIds
