@@ -17,11 +17,12 @@ public sealed class WarehouseLocationTests
 
     private static Guid AddPosition(Warehouse warehouse, string code, int capacity = 1)
     {
-        var aisle = warehouse.AddLocation("A-01", WarehouseLocationType.Aisle);
+        var prefix = code.Replace("-", string.Empty, StringComparison.Ordinal);
+        var aisle = warehouse.AddLocation($"A-{prefix}", WarehouseLocationType.Aisle);
         Assert.True(aisle.IsSuccess);
-        var shelf = warehouse.AddLocation("E-01", WarehouseLocationType.Shelf, aisle.Value);
+        var shelf = warehouse.AddLocation($"E-{prefix}", WarehouseLocationType.Shelf, aisle.Value);
         Assert.True(shelf.IsSuccess);
-        var cabinet = warehouse.AddLocation("G-01", WarehouseLocationType.Cabinet, shelf.Value);
+        var cabinet = warehouse.AddLocation($"G-{prefix}", WarehouseLocationType.Cabinet, shelf.Value);
         Assert.True(cabinet.IsSuccess);
         var position = warehouse.AddLocation(code, WarehouseLocationType.Position, cabinet.Value, capacity);
         Assert.True(position.IsSuccess);
