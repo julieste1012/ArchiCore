@@ -26,6 +26,11 @@ public sealed class FolderDocument : Entity
 
     internal Result<int> AddFolio(int number)
     {
+        if (_annexes.Count > 0)
+            return Result.Failure<int>(new Error(
+                "Folder.FoliationClosedByAnnex",
+                "No se pueden agregar folios después del primer anexo; los anexos deben permanecer al final del documento."));
+
         var expectedNumber = _folios.Count + 1;
         if (number != expectedNumber)
             return Result.Failure<int>(new Error("Folder.InvalidFolioSequence", $"El siguiente folio esperado es {expectedNumber}."));
