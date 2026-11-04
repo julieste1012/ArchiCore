@@ -22,150 +22,43 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
+            modelBuilder.Entity("ArchiCore.Domain.Boxes.Box", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("EnqueuedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<string>("EventType")
+                    b.Property<string>("BoxCode")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
-                    b.Property<string>("Payload")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
-                    b.Property<DateTime?>("ProcessedAtUtc")
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("OccurredOnUtc")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<Guid?>("WarehouseLocationId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EnqueuedAtUtc")
-                        .HasDatabaseName("IX_OutboxMessages_Pending")
-                        .HasFilter("\"ProcessedAtUtc\" IS NULL");
+                    b.HasIndex("Barcode")
+                        .IsUnique();
 
-                    b.ToTable("OutboxMessages", (string)null);
-                });
+                    b.HasIndex("BoxCode")
+                        .IsUnique();
 
-            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Audit.DomainEventAuditEntry", b =>
-                {
-                    b.Property<Guid>("Id").HasColumnType("uuid");
-                    b.Property<string>("EventType").IsRequired().HasMaxLength(512).HasColumnType("character varying(512)");
-                    b.Property<DateTime>("OccurredOnUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("Payload").IsRequired().HasColumnType("jsonb");
-                    b.Property<DateTime>("RecordedAtUtc").HasColumnType("timestamp with time zone");
-                    b.HasKey("Id");
-                    b.HasIndex("EventType").HasDatabaseName("IX_DomainEventAuditEntries_EventType");
-                    b.HasIndex("OccurredOnUtc").HasDatabaseName("IX_DomainEventAuditEntries_OccurredOnUtc");
-                    b.ToTable("DomainEventAuditEntries", (string)null);
-                });
-
-            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Audit.SecurityAuditEntry", b =>
-                {
-                    b.Property<Guid>("Id").HasColumnType("uuid");
-                    b.Property<DateTime>("OccurredOnUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("Action").IsRequired().HasMaxLength(128).HasColumnType("character varying(128)");
-                    b.Property<string>("Outcome").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)");
-                    b.Property<Guid?>("ActorUserId").HasColumnType("uuid");
-                    b.Property<string>("ActorRole").HasMaxLength(64).HasColumnType("character varying(64)");
-                    b.Property<Guid?>("TargetUserId").HasColumnType("uuid");
-                    b.Property<string>("TargetRole").HasMaxLength(64).HasColumnType("character varying(64)");
-                    b.HasKey("Id");
-                    b.HasIndex("Action").HasDatabaseName("IX_SecurityAuditEntries_Action");
-                    b.HasIndex("ActorUserId").HasDatabaseName("IX_SecurityAuditEntries_ActorUserId");
-                    b.HasIndex("OccurredOnUtc").HasDatabaseName("IX_SecurityAuditEntries_OccurredOnUtc");
-                    b.HasIndex("TargetUserId").HasDatabaseName("IX_SecurityAuditEntries_TargetUserId");
-                    b.ToTable("SecurityAuditEntries", (string)null);
-                });
-
-            modelBuilder.Entity("ArchiCore.Infrastructure.Security.UserAccount", b =>
-                {
-                    b.Property<Guid>("Id").HasColumnType("uuid");
-                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("DisplayName").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)");
-                    b.Property<string>("Email").IsRequired().HasMaxLength(254).HasColumnType("character varying(254)");
-                    b.Property<int>("TokenVersion").HasColumnType("integer").HasDefaultValue(0);
-                    b.Property<int>("FailedLoginAttempts").HasColumnType("integer");
-                    b.Property<bool>("IsActive").HasColumnType("boolean");
-                    b.Property<DateTime?>("LockoutEndUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("NormalizedEmail").IsRequired().HasMaxLength(254).HasColumnType("character varying(254)");
-                    b.Property<string>("PasswordHash").IsRequired().HasMaxLength(512).HasColumnType("character varying(512)");
-                    b.Property<string>("Role").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)");
-                    b.Property<DateTime?>("UpdatedAtUtc").HasColumnType("timestamp with time zone");
-                    b.HasKey("Id");
-                    b.HasIndex("NormalizedEmail").IsUnique().HasDatabaseName("IX_UserAccounts_NormalizedEmail");
-                    b.ToTable("UserAccounts", (string)null);
-                });
-
-            modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
-                {
-                    b.HasOne("ArchiCore.Domain.Contracts.Contract", null)
-                        .WithMany()
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                    b.HasOne("ArchiCore.Domain.Customers.Customer", null)
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
-                {
-                    b.Property<Guid>("Id").HasColumnType("uuid");
-                    b.Property<DateTime>("CreatedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<DateTime>("ExpiresAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("ReplacedByTokenHash").HasMaxLength(64).HasColumnType("character varying(64)");
-                    b.Property<DateTime?>("RevokedAtUtc").IsConcurrencyToken().HasColumnType("timestamp with time zone");
-                    b.Property<string>("TokenHash").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)");
-                    b.Property<Guid>("UserAccountId").HasColumnType("uuid");
-                    b.HasKey("Id");
-                    b.HasIndex("TokenHash").IsUnique().HasDatabaseName("IX_RefreshTokens_TokenHash");
-                    b.HasIndex("UserAccountId").HasDatabaseName("IX_RefreshTokens_UserAccountId");
-                    b.ToTable("RefreshTokens", (string)null);
-                });
-
-            modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
-                {
-                    b.Property<Guid>("Id").HasColumnType("uuid");
-                    b.Property<Guid>("ContractId").HasColumnType("uuid");
-                    b.Property<Guid>("CustomerId").HasColumnType("uuid");
-                    b.Property<Guid>("ReceivedByUserId").HasColumnType("uuid");
-                    b.Property<DateTime>("ReceivedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("InitialObservations").HasMaxLength(2000).HasColumnType("character varying(2000)");
-                    b.Property<string>("Status").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)");
-                    b.Property<Guid?>("InspectedByUserId").HasColumnType("uuid");
-                    b.Property<DateTime?>("InspectionCompletedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<bool?>("SafeToAccept").HasColumnType("boolean");
-                    b.Property<string>("InspectionObservations").HasMaxLength(2000).HasColumnType("character varying(2000)");
-                    b.Property<int?>("DeclaredBoxCount").HasColumnType("integer");
-                    b.Property<int?>("DeclaredFolderCount").HasColumnType("integer");
-                    b.Property<int?>("CountedBoxCount").HasColumnType("integer");
-                    b.Property<int?>("CountedFolderCount").HasColumnType("integer");
-                    b.Property<string>("DiscrepancyReport").HasMaxLength(4000).HasColumnType("character varying(4000)");
-                    b.Property<Guid?>("CountedByUserId").HasColumnType("uuid");
-                    b.Property<DateTime?>("CountedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<Guid?>("ApprovedByUserId").HasColumnType("uuid");
-                    b.Property<DateTime?>("ApprovedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<Guid?>("SuspendedByUserId").HasColumnType("uuid");
-                    b.Property<DateTime?>("SuspendedAtUtc").HasColumnType("timestamp with time zone");
-                    b.Property<string>("SuspensionReason").HasMaxLength(1000).HasColumnType("character varying(1000)");
-                    b.Property<DateTime>("CreatedAt").HasColumnType("timestamp with time zone");
-                    b.Property<DateTime?>("UpdatedAt").HasColumnType("timestamp with time zone");
-                    b.HasKey("Id");
-                    b.HasIndex("ContractId", "ReceivedAtUtc").HasDatabaseName("IX_DocumentaryReceptions_ContractId_ReceivedAtUtc");
-                    b.HasIndex("Status").HasDatabaseName("IX_DocumentaryReceptions_Status");
-                    b.HasIndex("ReceivedAtUtc").HasDatabaseName("IX_DocumentaryReceptions_ReceivedAtUtc");
-                    b.HasIndex("CustomerId");
-                    b.ToTable("DocumentaryReceptions", (string)null);
+                    b.ToTable("Boxes", (string)null);
                 });
 
             modelBuilder.Entity("ArchiCore.Domain.Contracts.Contract", b =>
@@ -238,6 +131,105 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CountedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CountedBoxCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CountedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("CountedFolderCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("DeclaredBoxCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("DeclaredFolderCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DiscrepancyReport")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("InitialObservations")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("InspectedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("InspectionCompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InspectionObservations")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ReceivedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool?>("SafeToAccept")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("SuspendedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SuspendedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SuspensionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("ReceivedAtUtc")
+                        .HasDatabaseName("IX_DocumentaryReceptions_ReceivedAtUtc");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_DocumentaryReceptions_Status");
+
+                    b.HasIndex("ContractId", "ReceivedAtUtc")
+                        .HasDatabaseName("IX_DocumentaryReceptions_ContractId_ReceivedAtUtc");
+
+                    b.ToTable("DocumentaryReceptions", (string)null);
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.Projects.Project", b =>
                 {
                     b.Property<Guid>("Id")
@@ -306,6 +298,240 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Warehouses", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Audit.DomainEventAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("OccurredOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType")
+                        .HasDatabaseName("IX_DomainEventAuditEntries_EventType");
+
+                    b.HasIndex("OccurredOnUtc")
+                        .HasDatabaseName("IX_DomainEventAuditEntries_OccurredOnUtc");
+
+                    b.ToTable("DomainEventAuditEntries", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Audit.SecurityAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ActorRole")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("OccurredOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TargetRole")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Action")
+                        .HasDatabaseName("IX_SecurityAuditEntries_Action");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("IX_SecurityAuditEntries_ActorUserId");
+
+                    b.HasIndex("OccurredOnUtc")
+                        .HasDatabaseName("IX_SecurityAuditEntries_OccurredOnUtc");
+
+                    b.HasIndex("TargetUserId")
+                        .HasDatabaseName("IX_SecurityAuditEntries_TargetUserId");
+
+                    b.ToTable("SecurityAuditEntries", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EnqueuedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTime>("OccurredOnUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnqueuedAtUtc")
+                        .HasDatabaseName("IX_OutboxMessages_Pending")
+                        .HasFilter("\"ProcessedAtUtc\" IS NULL");
+
+                    b.ToTable("OutboxMessages", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_RefreshTokens_TokenHash");
+
+                    b.HasIndex("UserAccountId")
+                        .HasDatabaseName("IX_RefreshTokens_UserAccountId");
+
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Infrastructure.Security.UserAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LockoutEndUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("TokenVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserAccounts_NormalizedEmail");
+
+                    b.ToTable("UserAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("ArchiCore.Domain.Boxes.Box", b =>
+                {
+                    b.OwnsMany("ArchiCore.Domain.Boxes.BoxFolderReference", "FolderReferences", b1 =>
+                        {
+                            b1.Property<Guid>("BoxId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("FolderId")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("BoxId", "FolderId");
+
+                            b1.HasIndex("FolderId");
+
+                            b1.ToTable("BoxFolderReferences", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("BoxId");
+                        });
+
+                    b.Navigation("FolderReferences");
                 });
 
             modelBuilder.Entity("ArchiCore.Domain.Contracts.Contract", b =>
@@ -419,6 +645,21 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                     b.Navigation("Contracts");
                 });
 
+            modelBuilder.Entity("ArchiCore.Domain.DocumentaryReception.DocumentaryReception", b =>
+                {
+                    b.HasOne("ArchiCore.Domain.Contracts.Contract", null)
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ArchiCore.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ArchiCore.Domain.Projects.Project", b =>
                 {
                     b.HasOne("ArchiCore.Domain.Contracts.Contract", null)
@@ -464,6 +705,77 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
 
                     b.Navigation("WarehouseAssignments");
                 });
+
+            modelBuilder.Entity("ArchiCore.Domain.Warehouses.Warehouse", b =>
+                {
+                    b.OwnsMany("ArchiCore.Domain.Warehouses.WarehouseLocation", "Locations", b1 =>
+                        {
+                            b1.Property<Guid>("WarehouseId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int?>("Capacity")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Code")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)");
+
+                            b1.Property<DateTime>("CreatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<Guid?>("ParentLocationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Type")
+                                .IsRequired()
+                                .HasMaxLength(24)
+                                .HasColumnType("character varying(24)");
+
+                            b1.Property<DateTime?>("UpdatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.HasKey("WarehouseId", "Id");
+
+                            b1.HasIndex("WarehouseId", "Code")
+                                .IsUnique();
+
+                            b1.ToTable("WarehouseLocations", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("WarehouseId");
+
+                            b1.OwnsMany("ArchiCore.Domain.Warehouses.WarehouseLocationBoxReference", "BoxReferences", b2 =>
+                                {
+                                    b2.Property<Guid>("WarehouseId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("LocationId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<Guid>("BoxId")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("uuid");
+
+                                    b2.HasKey("WarehouseId", "LocationId", "BoxId");
+
+                                    b2.HasIndex("BoxId");
+
+                                    b2.ToTable("WarehouseLocationBoxReferences", (string)null);
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("WarehouseId", "LocationId");
+                                });
+
+                            b1.Navigation("BoxReferences");
+                        });
+
+                    b.Navigation("Locations");
+                });
+
             modelBuilder.Entity("ArchiCore.Infrastructure.Security.RefreshTokenRecord", b =>
                 {
                     b.HasOne("ArchiCore.Infrastructure.Security.UserAccount", "UserAccount")
@@ -471,6 +783,7 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
                     b.Navigation("UserAccount");
                 });
 
@@ -478,7 +791,6 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("RefreshTokens");
                 });
-
 #pragma warning restore 612, 618
         }
     }
