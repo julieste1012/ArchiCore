@@ -10,6 +10,12 @@ public sealed class ArchiveSeries : Entity
     public string Name { get; private set; }
     public IReadOnlyCollection<ArchiveSubseries> Subseries => _subseries.AsReadOnly();
 
+    private ArchiveSeries()
+    {
+        Code = string.Empty;
+        Name = string.Empty;
+    }
+
     internal ArchiveSeries(string code, string name)
     {
         Code = code;

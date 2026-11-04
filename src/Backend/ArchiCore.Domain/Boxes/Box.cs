@@ -9,13 +9,14 @@ namespace ArchiCore.Domain.Boxes;
 /// </summary>
 public sealed class Box : Entity, IAggregateRoot
 {
-    private readonly List<Guid> _folderIds = new();
+    private readonly List<BoxFolderReference> _folderReferences = new();
 
     public BoxCode BoxCode { get; private set; }
     public Barcode? Barcode { get; private set; }
     public BoxStatus Status { get; private set; }
     public Guid? WarehouseLocationId { get; private set; }
-    public IReadOnlyCollection<Guid> FolderIds => _folderIds.AsReadOnly();
+    public IReadOnlyCollection<BoxFolderReference> FolderReferences => _folderReferences.AsReadOnly();
+    public IReadOnlyCollection<Guid> FolderIds => _folderReferences.Select(item => item.FolderId).ToArray();
 
     private Box(BoxCode boxCode)
     {
@@ -114,10 +115,10 @@ public sealed class Box : Entity, IAggregateRoot
             return Result.Failure(new Error("Box.InvalidFolderAssignmentState", "Las carpetas solo pueden asociarse a una caja almacenada."));
         if (folderId == Guid.Empty)
             return Result.Failure(new Error("Box.FolderIdRequired", "El identificador de la carpeta es obligatorio."));
-        if (_folderIds.Contains(folderId))
+        if (_folderReferences.Any(item => item.FolderId == folderId))
             return Result.Failure(new Error("Box.FolderAlreadyAssigned", "La carpeta ya está asociada a esta caja."));
 
-        _folderIds.Add(folderId);
+        _folderReferences.Add(new BoxFolderReference(folderId));
         MarkAsUpdated();
         AddDomainEvent(new FolderAdded(Id, folderId));
         return Result.Success();
@@ -127,7 +128,7 @@ public sealed class Box : Entity, IAggregateRoot
     {
         if (Status != BoxStatus.InStorage)
             return Result.Failure(new Error("Box.InvalidFolderRemovalState", "Las carpetas solo pueden retirarse de una caja almacenada."));
-        if (!_folderIds.Remove(folderId))
+        if (!_folderReferences.RemoveAll(item => item.FolderId == folderId) > 0)
             return Result.Failure(new Error("Box.FolderNotFound", "La carpeta no está asociada a esta caja."));
 
         MarkAsUpdated();

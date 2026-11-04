@@ -13,6 +13,11 @@ public sealed class FolderDocument : Entity
     public IReadOnlyCollection<Folio> Folios => _folios.AsReadOnly();
     public IReadOnlyCollection<Annex> Annexes => _annexes.AsReadOnly();
 
+    private FolderDocument()
+    {
+        Title = string.Empty;
+    }
+
     internal FolderDocument(string title, DateTime? documentDate)
     {
         Title = title;
@@ -47,6 +52,7 @@ public sealed class FolderDocument : Entity
 public sealed class Folio : Entity
 {
     public int Number { get; private set; }
+    private Folio() { }
     internal Folio(int number) => Number = number;
 }
 
@@ -55,6 +61,8 @@ public sealed class Annex : Entity
 {
     public string Title { get; private set; }
     public int Sequence { get; private set; }
+
+    private Annex() => Title = string.Empty;
 
     internal Annex(string title, int sequence)
     {

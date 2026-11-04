@@ -10,6 +10,7 @@ public sealed class Warehouse : Entity, IAggregateRoot
 
     public WarehouseCode WarehouseCode { get; private set; }
     public WarehouseStatus Status { get; private set; }
+    public IReadOnlyCollection<WarehouseLocation> Locations => _locations.AsReadOnly();
 
     private Warehouse() => WarehouseCode = null!;
 

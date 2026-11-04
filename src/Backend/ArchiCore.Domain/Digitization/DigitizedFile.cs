@@ -12,6 +12,14 @@ public sealed class DigitizedFile : Entity
     public string Sha256 { get; private set; }
     public int PageCount { get; private set; }
 
+    private DigitizedFile()
+    {
+        StorageObjectKey = string.Empty;
+        OriginalFileName = string.Empty;
+        ContentType = string.Empty;
+        Sha256 = string.Empty;
+    }
+
     internal DigitizedFile(DigitizedFileInput input)
     {
         StorageObjectKey = input.StorageObjectKey.Trim();
