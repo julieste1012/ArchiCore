@@ -79,6 +79,7 @@ Every event is written in the past tense, for example CustomerCreated, ContractA
 
 ## Archive Events
 - ArchiveCreated
+- SectionCreated
 - SeriesCreated
 - SubseriesCreated
 - ExpedientCreated
