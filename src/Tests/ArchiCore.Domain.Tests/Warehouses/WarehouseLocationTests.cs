@@ -22,9 +22,9 @@ public sealed class WarehouseLocationTests
         Assert.True(aisle.IsSuccess);
         var shelf = warehouse.AddLocation($"E-{prefix}", WarehouseLocationType.Shelf, aisle.Value);
         Assert.True(shelf.IsSuccess);
-        var cabinet = warehouse.AddLocation($"G-{prefix}", WarehouseLocationType.Cabinet, shelf.Value);
-        Assert.True(cabinet.IsSuccess);
-        var position = warehouse.AddLocation(code, WarehouseLocationType.Position, cabinet.Value, capacity);
+        var level = warehouse.AddLocation($"G-{prefix}", WarehouseLocationType.Level, shelf.Value);
+        Assert.True(level.IsSuccess);
+        var position = warehouse.AddLocation(code, WarehouseLocationType.Position, level.Value, capacity);
         Assert.True(position.IsSuccess);
         return position.Value;
     }
@@ -44,11 +44,11 @@ public sealed class WarehouseLocationTests
         var warehouse = CreateOperationalWarehouse();
         var aisle = warehouse.AddLocation("A-01", WarehouseLocationType.Aisle).Value;
         var shelf = warehouse.AddLocation("E-01", WarehouseLocationType.Shelf, aisle).Value;
-        var cabinet = warehouse.AddLocation("G-01", WarehouseLocationType.Cabinet, shelf).Value;
-        var invalid = warehouse.AddLocation("P-01", WarehouseLocationType.Position, cabinet, 0);
+        var level = warehouse.AddLocation("G-01", WarehouseLocationType.Level, shelf).Value;
+        var invalid = warehouse.AddLocation("P-01", WarehouseLocationType.Position, level, 0);
         Assert.True(invalid.IsFailure);
         Assert.Equal("Warehouse.InvalidLocationCapacity", invalid.Error.Code);
-        var position = warehouse.AddLocation("P-01", WarehouseLocationType.Position, cabinet, 2);
+        var position = warehouse.AddLocation("P-01", WarehouseLocationType.Position, level, 2);
         Assert.True(position.IsSuccess);
         Assert.Contains(warehouse.DomainEvents, item => item is LocationCreated);
     }
