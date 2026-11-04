@@ -150,9 +150,6 @@ public sealed class Box : Entity, IAggregateRoot
     {
         var validation = EnsureStatusIs(BoxStatus.Returned, "Box.InvalidArchive", "La caja solo puede archivarse desde el estado Returned.");
         if (validation.IsFailure) return validation;
-        if (_folderIds.Count > 0)
-            return Result.Failure(new Error("Box.FoldersRemainAssigned", "No se puede archivar una caja que todavía contiene carpetas."));
-
         Status = BoxStatus.Archived;
         MarkAsUpdated();
         AddDomainEvent(new BoxArchived(Id));
