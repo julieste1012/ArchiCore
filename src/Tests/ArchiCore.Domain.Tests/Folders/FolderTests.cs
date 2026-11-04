@@ -74,6 +74,11 @@ public sealed class FolderTests
         Assert.Equal("Folder.InvalidFolioSequence", invalidFolio.Error.Code);
 
         Assert.Equal(3, folder.AddAnnex(documentId, "Anexo fotográfico").Value);
+
+        var folioAfterAnnex = folder.AddFolio(documentId, 3);
+        Assert.True(folioAfterAnnex.IsFailure);
+        Assert.Equal("Folder.FoliationClosedByAnnex", folioAfterAnnex.Error.Code);
+
         var document = Assert.Single(folder.Documents);
         Assert.Equal(new[] { 1, 2 }, document.Folios.Select(item => item.Number));
         Assert.Equal(3, Assert.Single(document.Annexes).Sequence);
