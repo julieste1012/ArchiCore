@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ArchiCore.Infrastructure.Persistence.Configurations;
 
+// Warehouse locations and their box occupancy are persisted as owned collections of the Warehouse aggregate.
 internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
 {
     public void Configure(EntityTypeBuilder<Warehouse> builder)
