@@ -242,6 +242,12 @@ public sealed class Project : Entity, IAggregateRoot
     /// </summary>
     public Result AssignCoordinator(Guid coordinatorId)
     {
+        if (Status == ProjectStatus.Archived)
+        {
+            return Result.Failure(
+                new Error("Project.ArchivedCannotBeModified", "Un proyecto archivado no puede modificarse."));
+        }
+
         if (coordinatorId == Guid.Empty)
         {
             return Result.Failure(
@@ -260,6 +266,12 @@ public sealed class Project : Entity, IAggregateRoot
     /// </summary>
     public Result AssignWarehouse(Guid warehouseId, DateTime assignedFrom)
     {
+        if (Status == ProjectStatus.Archived)
+        {
+            return Result.Failure(
+                new Error("Project.ArchivedCannotBeModified", "Un proyecto archivado no puede modificarse."));
+        }
+
         if (warehouseId == Guid.Empty)
         {
             return Result.Failure(
@@ -284,6 +296,12 @@ public sealed class Project : Entity, IAggregateRoot
     /// </summary>
     public Result ReleaseWarehouse(Guid warehouseId, DateTime releasedOn)
     {
+        if (Status == ProjectStatus.Archived)
+        {
+            return Result.Failure(
+                new Error("Project.ArchivedCannotBeModified", "Un proyecto archivado no puede modificarse."));
+        }
+
         var assignment = _warehouseAssignments.FirstOrDefault(w => w.WarehouseId == warehouseId && w.IsActive);
 
         if (assignment is null)
