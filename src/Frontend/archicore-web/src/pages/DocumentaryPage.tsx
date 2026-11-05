@@ -59,6 +59,7 @@ export function DocumentaryPage({ role }: Props) {
   const [expedientTitle, setExpedientTitle] = useState('');
   const [folderCode, setFolderCode] = useState('');
   const [documentTitle, setDocumentTitle] = useState('');
+  const [annexTitle, setAnnexTitle] = useState('');
   const [dueAt, setDueAt] = useState(localDateTime(new Date(Date.now() + 7 * 86400000)));
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(true);
@@ -330,7 +331,24 @@ export function DocumentaryPage({ role }: Props) {
             {canClassify && selectedFolder.status === 'Created' && <button className="secondary-button" disabled={saving} onClick={() => void updateFolder('receive')}>Registrar recepción</button>}
             {canClassify && selectedFolder.status === 'Received' && <button className="secondary-button" disabled={saving} onClick={() => void updateFolder('organize')}>Marcar organizada</button>}
             {canClassify && <form className="documentary-mini-form" onSubmit={addDocument}><strong>Registrar documento</strong><input required value={documentTitle} onChange={e => setDocumentTitle(e.target.value)} placeholder="Título del documento" /><button className="secondary-button" disabled={saving}><Plus size={13} /> Agregar</button></form>}
-            <div className="documentary-documents">{selectedFolder.documents.map(doc => <div key={doc.id}><FileText size={13} /><span>{doc.title}</span><small>{doc.folios.length} folios · {doc.annexes.length} anexos</small></div>)}</div>
+            <div className="documentary-documents">{selectedFolder.documents.map(doc => <div className="documentary-document-item" key={doc.id}>
+              <div className="documentary-document-heading"><FileText size={13} /><strong>{doc.title}</strong><small>{doc.folios.length} folios · {doc.annexes.length} anexos</small></div>
+              {canClassify && selectedFolder.status === 'Organized' && <div className="documentary-document-actions">
+                <button type="button" className="secondary-button compact-button" disabled={saving} onClick={() => void run(
+                  () => api.post('/folders/' + selectedFolder.id + '/documents/' + doc.id + '/folios', { number: doc.folios.length + 1 }),
+                  'Folio ' + (doc.folios.length + 1) + ' agregado.',
+                  reloadArchive,
+                )}>+ Folio {doc.folios.length + 1}</button>
+                <form onSubmit={event => { event.preventDefault(); if (!annexTitle.trim()) return; void run(
+                  () => api.post('/folders/' + selectedFolder.id + '/documents/' + doc.id + '/annexes', { title: annexTitle.trim() }),
+                  'Anexo agregado.',
+                  async () => { setAnnexTitle(''); await reloadArchive(); },
+                ); }}>
+                  <input aria-label="Título del anexo" value={annexTitle} onChange={event => setAnnexTitle(event.target.value)} placeholder="Nombre del anexo" required />
+                  <button type="submit" className="secondary-button compact-button" disabled={saving}>+ Anexo</button>
+                </form>
+              </div>}
+            </div>)}</div>
             {canMovePhysical && boxes.length > 0 && <div className="documentary-mini-form"><strong>Asignar o mover a caja</strong><select value={boxId} onChange={e => setBoxId(e.target.value)}>{boxes.map(item => <option key={item.id} value={item.id}>{item.boxCode}</option>)}</select><button className="secondary-button" disabled={saving || !boxId} onClick={() => void run(() => api.post('/folders/' + selectedFolder.id + (selectedFolder.status === 'Stored' ? '/move-to-box/' : '/box/') + boxId), 'Relación de carpeta y caja actualizada.', reloadArchive)}>Guardar caja</button></div>}
           </>}
         </section>
@@ -344,7 +362,17 @@ export function DocumentaryPage({ role }: Props) {
 
     {tab === 'digitization' && <div className="documentary-grid">
       <section className="content-card"><p className="eyebrow">CONVERSIÓN DIGITAL</p><h2>Digitalizar carpeta</h2><label>Carpeta</label><select value={folderId} onChange={e => setFolderId(e.target.value)}><option value="">Selecciona carpeta</option>{folders.map(item => <option key={item.id} value={item.id}>{item.folderCode}</option>)}</select>{canRequestDigitization && <button className="primary-button documentary-button-gap" disabled={saving || !folderId} onClick={() => void requestDigitization()}><Plus size={14} /> Solicitar digitalización</button>}<p className="form-hint">La API valida los PDF, calcula SHA-256, cuenta páginas y guarda los archivos en el almacenamiento configurado.</p></section>
-      <section className="content-card"><p className="eyebrow">SOLICITUDES Y ARCHIVOS</p><h2>Actividad de digitalización</h2>{digitizations.length === 0 ? <div className="empty-state"><ScanLine size={22} /><strong>Sin solicitudes</strong><span>Registra una solicitud para comenzar.</span></div> : <div className="documentary-activity-list">{digitizations.map(item => <article key={item.id}><div><strong>{new Date(item.requestedAtUtc).toLocaleDateString('es-CO')}</strong><small>{item.files.length} archivos</small></div><StatusBadge status={item.status} />{canDigitize && item.status === 'Requested' && <button className="secondary-button compact-button" disabled={saving} onClick={() => void run(() => api.post('/digitizations/' + item.id + '/start'), 'Digitalización iniciada.', reloadActivity)}>Iniciar</button>}{canDigitize && item.status === 'Processing' && <form className="digitization-upload" onSubmit={uploadFiles}><input type="file" accept="application/pdf,.pdf" multiple onChange={e => setFiles(Array.from(e.target.files ?? []))} /><button className="secondary-button compact-button" disabled={saving || !files.length}><Upload size={13} /> Subir PDF</button></form>}{item.files.map(file => <span className="documentary-file-chip" key={file.id}>{file.originalFileName} · {file.pageCount} páginas</span>)}</article>)}</div>}</section>
+      <section className="content-card"><p className="eyebrow">SOLICITUDES Y ARCHIVOS</p><h2>Actividad de digitalización</h2>{digitizations.length === 0 ? <div className="empty-state"><ScanLine size={22} /><strong>Sin solicitudes</strong><span>Registra una solicitud para comenzar.</span></div> : <div className="documentary-activity-list">{digitizations.map(item => <article key={item.id}><div><strong>{new Date(item.requestedAtUtc).toLocaleDateString('es-CO')}</strong><small>{item.files.length} archivos</small></div><StatusBadge status={item.status} />{canDigitize && item.status === 'Requested' && <button className="secondary-button compact-button" disabled={saving} onClick={() => void run(() => api.post('/digitizations/' + item.id + '/start'), 'Digitalización iniciada.', reloadActivity)}>Iniciar</button>}{canDigitize && item.status === 'Processing' && <form className="digitization-upload" onSubmit={uploadFiles}><input type="file" accept="application/pdf,.pdf" multiple onChange={e => setFiles(Array.from(e.target.files ?? []))} /><button className="secondary-button compact-button" disabled={saving || !files.length}><Upload size={13} /> Subir PDF</button></form>}{item.files.map(file => <button type="button" className="documentary-file-chip documentary-download" key={file.id} disabled={saving} onClick={() => void run(async () => {
+          const blob = await api.download('/digitizations/' + item.id + '/files/' + file.id + '/download');
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = file.originalFileName;
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }, 'Descarga de ' + file.originalFileName + ' iniciada.')}>{file.originalFileName} · {file.pageCount} páginas · Descargar</button>)}</article>)}</div>}</section>
     </div>}
   </>;
 }

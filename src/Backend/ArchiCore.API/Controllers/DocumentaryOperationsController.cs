@@ -395,6 +395,44 @@ public sealed class DocumentaryOperationsController(
         }
     }
 
+
+    [HttpGet("api/digitizations/{requestId:guid}/files/{fileId:guid}/download")]
+    [Authorize(Policy = AppPolicies.DigitizationRead)]
+    public async Task<IActionResult> DownloadDigitizedFile(
+        Guid requestId,
+        Guid fileId,
+        CancellationToken ct)
+    {
+        var request = await digitizations.GetByIdAsync(requestId, ct);
+        if (request is null) return NotFound();
+
+        var file = request.Files.SingleOrDefault(item => item.Id == fileId);
+        if (file is null) return NotFound();
+
+        var content = new MemoryStream(capacity: checked((int)Math.Min(file.SizeBytes, MaxFileBytes)));
+        try
+        {
+            await objectStorage.CopyToAsync(file.StorageObjectKey, content, ct);
+            content.Position = 0;
+            return File(content, file.ContentType, file.OriginalFileName);
+        }
+        catch (OperationCanceledException)
+        {
+            await content.DisposeAsync();
+            throw;
+        }
+        catch (Exception)
+        {
+            await content.DisposeAsync();
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Title = "Digitization.FileUnavailable",
+                Detail = "El archivo digital no está disponible temporalmente.",
+                Status = StatusCodes.Status503ServiceUnavailable
+            });
+        }
+    }
+
     private bool TryGetCurrentUserId(out Guid userId)
         => Guid.TryParse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out userId);
 

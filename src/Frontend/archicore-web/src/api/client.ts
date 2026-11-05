@@ -141,9 +141,39 @@ async function send<T>(
   return (await response.json()) as T;
 }
 
+
+async function downloadBlob(path: string, retried = false): Promise<Blob> {
+  const headers = new Headers();
+  if (activeSession?.accessToken) headers.set('Authorization', 'Bearer ' + activeSession.accessToken);
+
+  let response: Response;
+  try {
+    response = await fetch(API_BASE_URL + path, { method: 'GET', headers });
+  } catch {
+    throw new ApiError('No fue posible conectar con la API. Verifica que el backend esté ejecutándose.', 0);
+  }
+
+  if (response.status === 401 && !retried && activeSession?.refreshToken) {
+    const oldSession = activeSession;
+    try {
+      await refreshSession(oldSession);
+      if (!activeSession) throw new ApiError('La sesión expiró. Inicia sesión de nuevo.', 401);
+      return downloadBlob(path, true);
+    } catch (error) {
+      if (activeSession?.refreshToken === oldSession.refreshToken) setSession(null);
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('La sesión expiró. Inicia sesión de nuevo.', 401);
+    }
+  }
+
+  if (!response.ok) throw await readProblem(response);
+  return response.blob();
+}
+
 export const api = {
   get: <T>(path: string) => send<T>(path),
   upload: <T>(path: string, body: FormData) => send<T>(path, { method: 'POST', body }),
+  download: (path: string) => downloadBlob(path),
   post: <T>(path: string, body?: unknown) =>
     send<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(path: string, body: unknown) =>

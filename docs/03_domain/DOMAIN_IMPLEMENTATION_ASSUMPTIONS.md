@@ -55,21 +55,38 @@
 - Object keys must be relative, unique within the request and free of path traversal segments.
 - The application layer must verify that the folder belongs to the project, store and scan the bytes, validate actual MIME/checksum/page count, and persist object metadata consistently.
 
-## Persistence status
+## Implementation status
 
-- EF Core mappings and a versioned PostgreSQL migration now exist for Archive, Folder, Box, Warehouse physical locations, Loan and DigitizationRequest.
-- Repository contracts and EF-backed repository implementations are registered for Archive, Folder, Box, Loan and DigitizationRequest.
-- The current migration was generated from the actual EF model and the full backend test suite passed with zero failed and zero skipped tests.
-- The cross-aggregate application workflows, authenticated API endpoints and frontend screens are still pending; repositories alone do not make these capabilities available to users.
+Reviewed: 2026-11-05. Active delivery: PR #8, \`feat/documentary-domain-foundation\`.
 
-## Explicitly not implemented by this increment
+| Capability | Implementation status |
+|---|---|
+| EF Core mappings and PostgreSQL migrations for Archive, Folder, Box, WarehouseLocation, Loan and DigitizationRequest | Implemented |
+| EF-backed repositories and dependency-injection registration | Implemented |
+| Archive hierarchy read/write API | Implemented |
+| Box inventory, barcode, availability, storage and relocation API | Implemented |
+| Warehouse physical-location hierarchy and occupancy operations | Implemented |
+| Folder inventory, document registration, foliation, annexes and box assignment API | Implemented |
+| Loan request, authorization, delivery, return and history API | Implemented with provisional workflow rules |
+| Digitization request, start, PDF upload, metadata registration and authorized download API | Implemented for PDF |
+| Role-based API policies and role-visible React documentary workspace | Implemented |
+| Cross-aggregate operations coordinated before one EF Core SaveChanges call | Implemented for the documented application workflows |
+| Automated overdue detection and notification delivery | Pending |
+| Antivirus/malware scanning and digital preservation controls | Pending |
+| Business acceptance and detailed rules for business processes still marked Pending | Pending |
 
-- Official AGN mandatory metadata, TRD/CCD versioning, retention schedules, disposition, expediente numbering and foliation exceptions.
-- Loan Aggregate lifecycle, authorizations, due dates, partial returns, overdue policy and notifications.
-- Full cross-aggregate transactional use cases for Warehouse/Box/Folder assignment and movements.
-- EF Core mappings, migrations, repositories, API endpoints and frontend screens for Archive, Folder, WarehouseLocation and DigitizationRequest.
-- Digitization rejection, cancellation, rework, approval, SLA and operator assignment policies.
-- File retention, legal holds, OCR, PDF/A conversion, signatures or digital preservation requirements.
+The API exposes authenticated endpoints through \`DocumentaryOperationsController\`. PDF upload currently allows 1–10 files per request, with a maximum of 40 MiB per file and 80 MiB per batch. The server verifies the PDF signature, parses the document to determine its page count, computes SHA-256, generates the storage key, stores the object and then persists metadata. Downloads are authorized through the Digitization.Read policy. These controls do not constitute antivirus scanning or PDF/A validation.
+
+The React workspace exposes tabs for classification, boxes and warehouses, folders, loans and digitization. The interface uses the existing API client and role visibility model. Backend integration tests cover the documentary archive route separately from the Project lifecycle archive route.
+
+## Explicitly not implemented
+
+- Official AGN mandatory metadata, TRD/CCD versioning, retention schedules, disposition, official expediente numbering and foliation exceptions.
+- Loan rejection, cancellation, renewal, partial return, maximum duration, business-day calculation, grace periods and escalation.
+- Scheduled overdue detection and notifications. The \`Overdue\` state exists in the domain, but no recurring worker or scheduler currently changes loans to that state.
+- Antivirus/malware scanning, OCR, PDF/A conversion, signatures, legal holds, retention enforcement or digital preservation certification.
+- Fine-grained authorization by project/customer/contract scope. Current policies authorize by authenticated business role; project-scope checks must be added where business requirements require them.
+- Customer portal operations. CustomerRepresentative remains reserved for a future portal.
 
 These are tracked implementation gaps, not silently assumed as completed requirements.
 
