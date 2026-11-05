@@ -70,7 +70,6 @@ export function DocumentaryPage({ role }: Props) {
   const selectedFolder = folders.find(item => item.id === folderId);
   const sections = archive?.sections ?? [];
   const section = sections.find(item => item.id === sectionId) ?? sections[0];
-  const subseries = sections.flatMap(item => item.series).flatMap(item => item.subseries).find(item => item.id === subseriesId);
   const expedients = sections.flatMap(item => item.series).flatMap(item => item.subseries).flatMap(item => item.expedients);
   const positions = locations.filter(item => item.type === 'Position');
   const parentChoices = locations.filter(item => (
@@ -82,10 +81,11 @@ export function DocumentaryPage({ role }: Props) {
   async function loadInitial() {
     setBusy(true); setError('');
     try {
+      const emptyPage = <T,>(): PagedResult<T> => ({ page: 1, pageSize: 100, totalCount: 0, totalPages: 0, items: [] });
       const [projectResult, warehouseResult, boxResult] = await Promise.all([
         api.get<PagedResult<Project>>('/projects?page=1&pageSize=100'),
-        canReadPhysical ? api.get<PagedResult<Warehouse>>('/warehouses?page=1&pageSize=100') : Promise.resolve({ items: [] } as PagedResult<Warehouse>),
-        canReadPhysical ? api.get<PagedResult<Box>>('/boxes?page=1&pageSize=100') : Promise.resolve({ items: [] } as PagedResult<Box>),
+        canReadPhysical ? api.get<PagedResult<Warehouse>>('/warehouses?page=1&pageSize=100') : Promise.resolve(emptyPage<Warehouse>()),
+        canReadPhysical ? api.get<PagedResult<Box>>('/boxes?page=1&pageSize=100') : Promise.resolve(emptyPage<Box>()),
       ]);
       setProjects(projectResult.items);
       setWarehouses(warehouseResult.items);
