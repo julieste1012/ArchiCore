@@ -221,3 +221,23 @@ Según `BoxAggregate.md` (catálogo original, conservado sin modificaciones):
 |----------|------|-------------|
 | 1.0.0 | 2026-07-11 | Versión inicial del Aggregate Box. |
 | 2.0.0 | 2026-07-21 | Se incorporan Atributos del Aggregate, Referencias a otros Aggregates, Colecciones internas (`Folder` como Entity interna, por analogía con `WarehouseLocation`), Diagrama de estados, Métodos públicos y privados, y Factory Method. Se documenta la inconsistencia de clasificación de `Box` respecto a `DomainMap.md` y `01_DomainModel.md`, y se dejan señaladas como pendientes las transiciones de Lifecycle sin evento asociado, siguiendo la misma metodología aplicada en `ProjectAggregate.md v2.0` y `WarehouseAggregate.md v2.0`. |
+
+
+---
+
+# Implementation Addendum 2.1 - Lifecycle and Folder references
+
+The Box aggregate now implements the missing lifecycle transitions with the following provisional technical rules:
+
+- AssignBarcode() is allowed once while Created.
+- MakeAvailable() performs Created -> Available and requires a barcode.
+- Store(warehouseLocationId) performs Available -> InStorage.
+- Move() performs InStorage -> InTransit and clears the aggregate's current location reference; the Application use case must release occupancy in Warehouse in the same transaction.
+- StartLoanProcess() performs InTransit -> LoanProcess.
+- Return() performs LoanProcess -> Returned.
+- Archive() performs Returned -> Archived.
+- AddFolder(folderId) and RemoveFolder(folderId) manage identity references while the box is InStorage. The Box retains references when Archived for historical traceability.
+
+BoxMoved records the source location when the box leaves storage. BoxStored, BoxMadeAvailable, BoxLoanProcessStarted, FolderAdded and FolderRemoved make the new transitions auditable.
+
+The dedicated Folder specification is treated as authoritative for Folder's own lifecycle. Box stores only Folder IDs; Folder stores BoxId. A database unique constraint and transactional Application use case must ensure that the same Folder is not assigned to two boxes at once. That persistence/API workflow is not yet implemented.

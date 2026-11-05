@@ -6,6 +6,7 @@ using ArchiCore.Application.Authentication;
 using ArchiCore.Infrastructure.Security;
 using ArchiCore.Application.Abstractions.Storage;
 using ArchiCore.Infrastructure.Storage;
+using ArchiCore.Infrastructure.Persistence.Loans;
 using Minio;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,11 @@ public static class DependencyInjection
         services.AddScoped<IContractRepository, ContractRepository>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+        services.AddScoped<IArchiveRepository, ArchiveRepository>();
+        services.AddScoped<IFolderRepository, FolderRepository>();
+        services.AddScoped<IBoxRepository, BoxRepository>();
+        services.AddScoped<ILoanRepository, LoanRepository>();
+        services.AddScoped<IDigitizationRequestRepository, DigitizationRequestRepository>();
         services.AddScoped<IDomainEventAuditRepository, DomainEventAuditRepository>();
         services.AddScoped<ISecurityAuditRepository, SecurityAuditRepository>();
         services.AddScoped<IDocumentaryReceptionRepository, DocumentaryReceptionRepository>();
@@ -61,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<BootstrapAdminSeeder>();
         services.AddScoped<IDomainEventOutboxProcessor, DomainEventOutboxProcessor>();
+        services.AddScoped<LoanOverdueProcessor>();
         return services;
     }
 }

@@ -2,34 +2,47 @@
 
 ## Objetivo
 
-Este documento identifica todos los conceptos principales del dominio y su clasificación dentro de la arquitectura DDD.
+Identificar los conceptos principales de ArchiCore y sus límites actuales de consistencia. La clasificación indicada es la implementada de forma provisional en el código; los puntos pendientes se mantienen en DOMAIN_IMPLEMENTATION_ASSUMPTIONS.md.
 
----
+## Aggregate Roots
 
-# Aggregate Roots
-
+- Customer
 - Contract
 - Project
-- User
 - Warehouse
-- Loan
-
----
-
-# Entities
-
-- Folder
 - Box
-- Document
-- Annex
+- Archive
+- Folder
+- DocumentaryReception
+- DigitizationRequest
+- Loan
+- UserAccount (identidad/autenticación técnica, no sustituye el futuro agregado de personal)
 
+## Entities internas
 
----
+- WarehouseLocation (dentro de Warehouse)
+- ArchiveSeries, ArchiveSubseries, Expedient (dentro de Archive)
+- FolderDocument, Folio, Annex (dentro de Folder)
 
-# Value Objects
+## Referencias entre agregados
 
-## Identificadores
+- Customer -> Contract por ContractId
+- Contract -> Project por ProjectId
+- Project -> Archive por ProjectId
+- Archive -> Section -> Series -> Subseries -> Expedient (árbol interno de clasificación)
+- Folder -> ArchiveId + ExpedientId
+- Folder -> BoxId
+- Box -> FolderIds
+- Box -> WarehouseLocationId (identidad física)
+- DocumentaryReception -> ContractId + CustomerId + ProjectId
+- DigitizationRequest -> ProjectId + FolderId
+- Loan -> ProjectId + FolderId/BoxId (modelo pendiente)
 
+Las relaciones bidireccionales Folder.BoxId y Box.FolderIds deben sincronizarse en un único caso de uso transaccional. Infrastructure debe impedir más de una asignación activa de caja para la misma carpeta.
+
+## Value Objects
+
+### Identificadores
 - Barcode
 - ContractNumber
 - ProjectCode
@@ -37,68 +50,63 @@ Este documento identifica todos los conceptos principales del dominio y su clasi
 - BoxCode
 - WarehouseCode
 
-## Personas
-
+### Personas y contacto
 - PersonName
 - Email
 - PhoneNumber
 
-## Empresa
-
+### Empresa
 - Nit
 - Address
 
-## Financieros
-
+### Financieros
 - Money
 
----
+## Domain Services
 
-# Domain Services
+- LoanAuthorizationService (pendiente)
+- StorageAllocationService (pendiente)
+- DocumentDigitizationService (pendiente de integración de Application/Infrastructure)
 
-- LoanAuthorizationService
-- StorageAllocationService
-- DocumentDigitizationService
+## Domain Events
 
----
+Consultar 02_DomainEvents.md como catálogo central.
 
-# Domain Events
+## Repositories
 
-- ContractCreated
-- ProjectCreated
-- FolderMoved
-- BoxMoved
-- LoanCreated
-- LoanReturned
-- DocumentDigitized
-
----
-
-# Repositories
-
+- ICustomerRepository
 - IContractRepository
 - IProjectRepository
-- IUserRepository
 - IWarehouseRepository
-- ILoanRepository
+- IBoxRepository (pendiente)
+- IArchiveRepository (pendiente)
+- IFolderRepository (pendiente)
+- IDigitizationRequestRepository (pendiente)
+- ILoanRepository (pendiente)
 
----
+## Relaciones conceptuales
 
-# Relaciones principales
+Customer
+└── Contracts
+    └── Projects
+        ├── Archive
+        │   └── Series
+        │       └── Subseries
+        │           └── Expedients
+        │               └── Folders
+        │                   └── Documents
+        │                       ├── Folios
+        │                       └── Annexes
+        ├── Documentary Receptions
+        ├── Digitization Requests
+        └── Loans
 
-Cliente
-└── Contrato
-    └── Proyecto
-        ├── Carpetas
-        │   └── Documentos
-        │       └── Anexos
-        └── Coordinador
+Warehouse
+└── WarehouseLocations
+    └── Boxes
+        └── Folder references
 
-Bodega
-└── Caja
-    └── Carpetas
+UserAccount
+└── Security sessions and audit
 
-Usuario
-└── Préstamos
-# Nota
-un coordinador es un usuario con el rol Coordinator.
+> The tree above describes conceptual relationships. Aggregate references are by identity and do not imply that a child entity is physically persisted inside every displayed parent.

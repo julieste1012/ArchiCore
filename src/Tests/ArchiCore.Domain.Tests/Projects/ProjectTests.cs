@@ -103,6 +103,30 @@ public sealed class ProjectTests
     }
 
     [Fact]
+    public void Archived_project_cannot_be_modified_through_coordinator_or_warehouse_assignments()
+    {
+        var project = CreateProject();
+        Assert.True(project.Plan().IsSuccess);
+        Assert.True(project.Start().IsSuccess);
+        Assert.True(project.Complete().IsSuccess);
+        Assert.True(project.Close().IsSuccess);
+        Assert.True(project.Archive().IsSuccess);
+
+        var coordinatorResult = project.AssignCoordinator(Guid.NewGuid());
+        var warehouseResult = project.AssignWarehouse(
+            Guid.NewGuid(),
+            new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var releaseResult = project.ReleaseWarehouse(Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.True(coordinatorResult.IsFailure);
+        Assert.True(warehouseResult.IsFailure);
+        Assert.True(releaseResult.IsFailure);
+        Assert.Equal("Project.ArchivedCannotBeModified", coordinatorResult.Error.Code);
+        Assert.Equal("Project.ArchivedCannotBeModified", warehouseResult.Error.Code);
+        Assert.Equal("Project.ArchivedCannotBeModified", releaseResult.Error.Code);
+    }
+
+    [Fact]
     public void Empty_coordinator_id_is_rejected()
     {
         var project = CreateProject();

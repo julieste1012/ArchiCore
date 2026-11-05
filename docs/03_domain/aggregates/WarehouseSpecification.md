@@ -247,3 +247,18 @@ Las mismas utilizadas en `ContractSpecification.md`, `CustomerSpecification.md` 
 - Definir el evento de dominio (si corresponde) para `StartMaintenance()` y `FinishMaintenance()`.
 - Definir el evento de dominio (si corresponde) para `Archive()`.
 - Confirmar si `Warehouse` requiere un atributo de nombre descriptivo o dirección física (`Address`).
+
+
+---
+
+# Implementation Addendum 2.1 - WarehouseLocation
+
+The current domain increment formalizes the following provisional physical hierarchy:
+
+Aisle -> Shelf -> Level -> Position.
+
+Only Position holds boxes. Position capacity is a positive integer. Location codes are unique within a Warehouse after trimming and case normalization. A box can occupy only one position within a Warehouse. A relocation validates target capacity before releasing the source and emits LocationReleased, LocationOccupied and BoxRelocated.
+
+Warehouse cannot close or archive while any location remains occupied.
+
+These details are technical implementation assumptions, not formal business approval. See DOMAIN_IMPLEMENTATION_ASSUMPTIONS.md. EF Core persistence and API operations remain pending.
