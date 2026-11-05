@@ -75,6 +75,64 @@ public sealed class DocumentaryArchiveApiTests(ApiFixture fixture) : ApiTestBase
         await AssertStatusAsync(HttpStatusCode.OK, listResponse);
     }
 
+
+    [Fact]
+    public async Task Box_is_stored_in_a_position_and_warehouse_occupancy_is_consistent()
+    {
+        var warehouse = await CreateWarehouseAsync();
+
+        using var activationResponse = await PostAsync($"/api/warehouses/{warehouse.Id}/activate", new { });
+        await AssertStatusAsync(HttpStatusCode.OK, activationResponse);
+
+        var aisleId = await PostIdAsync(
+            $"/api/warehouses/{warehouse.Id}/locations",
+            new { Code = "AIS-" + Guid.NewGuid().ToString("N")[..6], Type = "Aisle", ParentLocationId = (Guid?)null, Capacity = (int?)null });
+        var shelfId = await PostIdAsync(
+            $"/api/warehouses/{warehouse.Id}/locations",
+            new { Code = "SH-" + Guid.NewGuid().ToString("N")[..6], Type = "Shelf", ParentLocationId = aisleId, Capacity = (int?)null });
+        var levelId = await PostIdAsync(
+            $"/api/warehouses/{warehouse.Id}/locations",
+            new { Code = "LV-" + Guid.NewGuid().ToString("N")[..6], Type = "Level", ParentLocationId = shelfId, Capacity = (int?)null });
+        var positionId = await PostIdAsync(
+            $"/api/warehouses/{warehouse.Id}/locations",
+            new { Code = "POS-" + Guid.NewGuid().ToString("N")[..6], Type = "Position", ParentLocationId = levelId, Capacity = 2 });
+
+        var boxCode = "BOX-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        using var boxResponse = await PostAsync("/api/boxes", new { BoxCode = boxCode });
+        await AssertStatusAsync(HttpStatusCode.Created, boxResponse);
+        var createdBox = await ReadBodyAsync<BoxCreatedResponse>(boxResponse);
+
+        var barcode = "BC-" + Guid.NewGuid().ToString("N");
+        using var barcodeResponse = await PostAsync(
+            $"/api/boxes/{createdBox.Id}/barcode",
+            new { Barcode = barcode });
+        await AssertStatusAsync(HttpStatusCode.NoContent, barcodeResponse);
+
+        using var availableResponse = await PostAsync($"/api/boxes/{createdBox.Id}/available", new { });
+        await AssertStatusAsync(HttpStatusCode.NoContent, availableResponse);
+
+        using var storeResponse = await PostAsync(
+            $"/api/boxes/{createdBox.Id}/store",
+            new { WarehouseId = warehouse.Id, LocationId = positionId });
+        await AssertStatusAsync(HttpStatusCode.NoContent, storeResponse);
+
+        using var boxDetailResponse = await GetAsync($"/api/boxes/{createdBox.Id}");
+        await AssertStatusAsync(HttpStatusCode.OK, boxDetailResponse);
+        var boxDetail = await ReadBodyAsync<BoxDetailResponse>(boxDetailResponse);
+        Assert.Equal("InStorage", boxDetail.Status);
+        Assert.Equal(positionId, boxDetail.WarehouseLocationId);
+
+        var physicalLocations = await GetJsonAsync<List<WarehouseLocationResponse>>(
+            $"/api/warehouses/{warehouse.Id}/locations");
+        var storedPosition = Assert.Single(physicalLocations, item => item.Id == positionId);
+        Assert.Equal(1, storedPosition.OccupiedCapacity);
+        Assert.Contains(createdBox.Id, storedPosition.BoxIds);
+    }
+
+    private sealed record BoxCreatedResponse(Guid Id);
+    private sealed record BoxDetailResponse(Guid Id, string Status, Guid? WarehouseLocationId);
+    private sealed record WarehouseLocationResponse(Guid Id, string Code, string Type, int? Capacity, int OccupiedCapacity, IReadOnlyList<Guid> BoxIds);
+
     private async Task<Guid> PostIdAsync(string path, object request)
     {
         using var response = await PostAsync(path, request);
