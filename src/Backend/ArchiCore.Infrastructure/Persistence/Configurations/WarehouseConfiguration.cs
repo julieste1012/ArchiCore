@@ -40,7 +40,7 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
             location.Property(x => x.Capacity);
             location.HasIndex("WarehouseId", nameof(WarehouseLocation.Code)).IsUnique();
 
-            location.OwnsMany(x => x.BoxReferences, boxReference =>
+            location.OwnsMany(x => x.BoxReferencesForPersistence, boxReference =>
             {
                 boxReference.ToTable("WarehouseLocationBoxReferences");
                 boxReference.WithOwner()
@@ -53,9 +53,8 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
                 boxReference.HasIndex(nameof(WarehouseLocationBoxReference.BoxId));
             });
 
-            location.Navigation(x => x.BoxReferences)
-                .HasField("_boxReferences")
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
+            location.Navigation(x => x.BoxReferencesForPersistence)
+                .UsePropertyAccessMode(PropertyAccessMode.Property);
         });
 
         builder.Navigation(x => x.Locations).UsePropertyAccessMode(PropertyAccessMode.Field);

@@ -12,6 +12,10 @@ public sealed class WarehouseLocation : Entity
     public Guid? ParentLocationId { get; private set; }
     public int? Capacity { get; private set; }
     public IReadOnlyCollection<WarehouseLocationBoxReference> BoxReferences => _boxReferences.AsReadOnly();
+
+    // EF Core tracks the stable mutable collection through this internal navigation.
+    // Callers outside the domain assembly only receive the read-only view above.
+    internal ICollection<WarehouseLocationBoxReference> BoxReferencesForPersistence => _boxReferences;
     public IReadOnlyCollection<Guid> BoxIds => _boxReferences.Select(item => item.BoxId).ToArray();
     public int OccupiedCapacity => _boxReferences.Count;
 
