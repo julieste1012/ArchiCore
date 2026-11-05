@@ -127,6 +127,46 @@ public sealed class DocumentaryArchiveApiTests(ApiFixture fixture) : ApiTestBase
         var storedPosition = Assert.Single(physicalLocations, item => item.Id == positionId);
         Assert.Equal(1, storedPosition.OccupiedCapacity);
         Assert.Contains(createdBox.Id, storedPosition.BoxIds);
+
+        var secondPositionId = await PostIdAsync(
+            $"/api/warehouses/{warehouse.Id}/locations",
+            new { Code = "POS-" + Guid.NewGuid().ToString("N")[..6], Type = "Position", ParentLocationId = levelId, Capacity = 2 });
+
+        using var relocateResponse = await PostAsync(
+            $"/api/boxes/{createdBox.Id}/relocate",
+            new
+            {
+                SourceWarehouseId = warehouse.Id,
+                DestinationWarehouseId = warehouse.Id,
+                DestinationLocationId = secondPositionId
+            });
+        await AssertStatusAsync(HttpStatusCode.NoContent, relocateResponse);
+
+        var afterRelocation = await GetJsonAsync<List<WarehouseLocationResponse>>(
+            $"/api/warehouses/{warehouse.Id}/locations");
+        var releasedPosition = Assert.Single(afterRelocation, item => item.Id == positionId);
+        var destinationPosition = Assert.Single(afterRelocation, item => item.Id == secondPositionId);
+        Assert.Equal(0, releasedPosition.OccupiedCapacity);
+        Assert.Empty(releasedPosition.BoxIds);
+        Assert.Equal(1, destinationPosition.OccupiedCapacity);
+        Assert.Contains(createdBox.Id, destinationPosition.BoxIds);
+
+        using var moveOutResponse = await PostAsync(
+            $"/api/boxes/{createdBox.Id}/move-out?warehouseId={warehouse.Id}",
+            new { });
+        await AssertStatusAsync(HttpStatusCode.NoContent, moveOutResponse);
+
+        var afterMoveOut = await GetJsonAsync<List<WarehouseLocationResponse>>(
+            $"/api/warehouses/{warehouse.Id}/locations");
+        var finalPosition = Assert.Single(afterMoveOut, item => item.Id == secondPositionId);
+        Assert.Equal(0, finalPosition.OccupiedCapacity);
+        Assert.Empty(finalPosition.BoxIds);
+
+        using var finalBoxResponse = await GetAsync($"/api/boxes/{createdBox.Id}");
+        await AssertStatusAsync(HttpStatusCode.OK, finalBoxResponse);
+        var finalBox = await ReadBodyAsync<BoxDetailResponse>(finalBoxResponse);
+        Assert.Equal("InTransit", finalBox.Status);
+        Assert.Null(finalBox.WarehouseLocationId);
     }
 
     private sealed record BoxCreatedResponse(Guid Id);
