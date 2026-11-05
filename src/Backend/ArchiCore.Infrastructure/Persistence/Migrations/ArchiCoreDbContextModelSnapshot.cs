@@ -1264,7 +1264,7 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("WarehouseId");
 
-                            b1.OwnsMany("ArchiCore.Domain.Warehouses.WarehouseLocationBoxReference", "BoxReferences", b2 =>
+                            b1.OwnsMany("ArchiCore.Domain.Warehouses.WarehouseLocationBoxReference", "BoxReferencesForPersistence", b2 =>
                                 {
                                     b2.Property<Guid>("WarehouseId")
                                         .HasColumnType("uuid");
@@ -1286,7 +1286,7 @@ namespace ArchiCore.Infrastructure.Persistence.Migrations
                                         .HasForeignKey("WarehouseId", "LocationId");
                                 });
 
-                            b1.Navigation("BoxReferences");
+                            b1.Navigation("BoxReferencesForPersistence");
                         });
 
                     b.Navigation("Locations");

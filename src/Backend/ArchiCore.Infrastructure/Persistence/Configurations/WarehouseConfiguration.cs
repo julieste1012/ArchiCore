@@ -57,7 +57,8 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
             });
 
             location.Navigation(x => x.BoxReferencesForPersistence)
-                .UsePropertyAccessMode(PropertyAccessMode.Property);
+                .HasField("_boxReferences")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         builder.Navigation(x => x.Locations).UsePropertyAccessMode(PropertyAccessMode.Field);
