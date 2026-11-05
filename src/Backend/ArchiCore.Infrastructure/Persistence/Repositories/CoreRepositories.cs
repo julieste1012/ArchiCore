@@ -127,15 +127,14 @@ internal sealed class WarehouseRepository(ArchiCoreDbContext dbContext) : IWareh
         var reference = location.BoxReferences.SingleOrDefault(item => item.BoxId == boxId)
             ?? throw new InvalidOperationException("The domain aggregate does not contain the requested box occupancy.");
 
-        var entry = trackedEntry ?? dbContext.Entry(reference);
-        if (entry.State == EntityState.Detached)
+        var entry = trackedEntry is not null && ReferenceEquals(trackedEntry.Entity, reference)
+            ? trackedEntry
+            : dbContext.Entry(reference);
+
+        if (entry.State != EntityState.Added)
         {
             entry.Property<Guid>("WarehouseId").CurrentValue = warehouse.Id;
             entry.Property<Guid>("LocationId").CurrentValue = locationId;
-            entry.State = EntityState.Added;
-        }
-        else if (entry.State == EntityState.Deleted)
-        {
             entry.State = EntityState.Added;
         }
     }
