@@ -104,4 +104,39 @@ internal sealed class WarehouseRepository(ArchiCoreDbContext dbContext) : IWareh
     {
         await dbContext.Warehouses.AddAsync(warehouse, cancellationToken);
     }
+
+
+    public void TrackLocationBoxReference(Warehouse warehouse, Guid locationId, Guid boxId, bool occupied)
+    {
+        var location = warehouse.Locations.SingleOrDefault(item => item.Id == locationId)
+            ?? throw new InvalidOperationException("The location does not belong to the supplied warehouse.");
+
+        var trackedEntry = dbContext.ChangeTracker.Entries<WarehouseLocationBoxReference>()
+            .SingleOrDefault(entry =>
+                entry.Entity.BoxId == boxId &&
+                entry.Property<Guid>("WarehouseId").CurrentValue == warehouse.Id &&
+                entry.Property<Guid>("LocationId").CurrentValue == locationId);
+
+        if (!occupied)
+        {
+            if (trackedEntry is not null)
+                trackedEntry.State = EntityState.Deleted;
+            return;
+        }
+
+        var reference = location.BoxReferences.SingleOrDefault(item => item.BoxId == boxId)
+            ?? throw new InvalidOperationException("The domain aggregate does not contain the requested box occupancy.");
+
+        var entry = trackedEntry ?? dbContext.Entry(reference);
+        if (entry.State == EntityState.Detached)
+        {
+            entry.Property<Guid>("WarehouseId").CurrentValue = warehouse.Id;
+            entry.Property<Guid>("LocationId").CurrentValue = locationId;
+            entry.State = EntityState.Added;
+        }
+        else if (entry.State == EntityState.Deleted)
+        {
+            entry.State = EntityState.Added;
+        }
+    }
 }

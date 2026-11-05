@@ -245,6 +245,7 @@ public sealed class DocumentaryManagementService(
         if (occupancy.IsFailure) return occupancy;
         var stored = box.Store(locationId);
         if (stored.IsFailure) return stored;
+        warehouses.TrackLocationBoxReference(warehouse, locationId, boxId, occupied: true);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
@@ -287,6 +288,10 @@ public sealed class DocumentaryManagementService(
         }
 
         if (movement.IsFailure) return movement;
+
+        warehouses.TrackLocationBoxReference(source, sourceLocationId, boxId, occupied: false);
+        warehouses.TrackLocationBoxReference(destination, destinationLocationId, boxId, occupied: true);
+
         var relocated = box.Relocate(destinationLocationId);
         if (relocated.IsFailure) return relocated;
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -303,8 +308,10 @@ public sealed class DocumentaryManagementService(
             return Result.Failure(new Error("Box.NotInStorage", "La caja debe estar almacenada antes de salir de su ubicación."));
         var warehouse = await warehouses.GetByIdAsync(warehouseId, cancellationToken);
         if (warehouse is null) return Result.Failure(new Error("Warehouse.NotFound", "No se encontró la bodega."));
-        var release = warehouse.ReleaseLocation(box.WarehouseLocationId.Value, boxId);
+        var locationId = box.WarehouseLocationId.Value;
+        var release = warehouse.ReleaseLocation(locationId, boxId);
         if (release.IsFailure) return release;
+        warehouses.TrackLocationBoxReference(warehouse, locationId, boxId, occupied: false);
         var moved = box.Move();
         if (moved.IsFailure) return moved;
         await unitOfWork.SaveChangesAsync(cancellationToken);
