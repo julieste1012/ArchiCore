@@ -73,6 +73,38 @@ public sealed class DocumentaryArchiveApiTests(ApiFixture fixture) : ApiTestBase
 
         using var listResponse = await GetAsync($"/api/archives/{archive.Id}/folders?page=1&pageSize=100");
         await AssertStatusAsync(HttpStatusCode.OK, listResponse);
+
+        using var receiveResponse = await PostAsync($"/api/folders/{createdFolder.Id}/receive", new { });
+        await AssertStatusAsync(HttpStatusCode.NoContent, receiveResponse);
+        using var organizeResponse = await PostAsync($"/api/folders/{createdFolder.Id}/organize", new { });
+        await AssertStatusAsync(HttpStatusCode.NoContent, organizeResponse);
+
+        var documentId = await PostIdAsync(
+            $"/api/folders/{createdFolder.Id}/documents",
+            new { Title = "Contrato firmado", DocumentDate = (DateTime?)null });
+
+        using var folioResponse = await PostAsync(
+            $"/api/folders/{createdFolder.Id}/documents/{documentId}/folios",
+            new { Number = 1 });
+        await AssertStatusAsync(HttpStatusCode.OK, folioResponse);
+        Assert.Equal(1, await ReadBodyAsync<int>(folioResponse));
+
+        using var annexResponse = await PostAsync(
+            $"/api/folders/{createdFolder.Id}/documents/{documentId}/annexes",
+            new { Title = "Anexo técnico" });
+        await AssertStatusAsync(HttpStatusCode.OK, annexResponse);
+        Assert.Equal(1, await ReadBodyAsync<int>(annexResponse));
+
+        using var interleavedFolioResponse = await PostAsync(
+            $"/api/folders/{createdFolder.Id}/documents/{documentId}/folios",
+            new { Number = 2 });
+        await AssertStatusAsync(HttpStatusCode.Conflict, interleavedFolioResponse);
+
+        var folderDetail = await GetJsonAsync<FolderDetailResponse>($"/api/folders/{createdFolder.Id}");
+        Assert.Equal("Organized", folderDetail.Status);
+        var document = Assert.Single(folderDetail.Documents);
+        Assert.Equal(new[] { 1 }, document.Folios);
+        Assert.Equal("Anexo técnico", Assert.Single(document.Annexes).Title);
     }
 
 
@@ -181,6 +213,9 @@ public sealed class DocumentaryArchiveApiTests(ApiFixture fixture) : ApiTestBase
     }
 
     private sealed record FolderCreatedResponse(Guid Id, Guid ArchiveId);
+    private sealed record FolderDetailResponse(Guid Id, string Status, IReadOnlyList<FolderDocumentDetailResponse> Documents);
+    private sealed record FolderDocumentDetailResponse(Guid Id, string Title, IReadOnlyList<int> Folios, IReadOnlyList<FolderAnnexDetailResponse> Annexes);
+    private sealed record FolderAnnexDetailResponse(string Title, int Sequence);
 
     private sealed record ArchiveSummaryResponse(Guid Id, Guid ProjectId);
 }
