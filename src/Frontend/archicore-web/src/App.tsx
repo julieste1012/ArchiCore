@@ -12,8 +12,9 @@ import { CustomersPage } from './pages/CustomersPage';
 import { ContractsPage } from './pages/ContractsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { WarehousesPage } from './pages/WarehousesPage';
+import { DocumentaryPage } from './pages/DocumentaryPage';
 
-export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'receptions' | 'users' | 'audit' | 'securityAudit' | 'password';
+export type ViewKey = 'dashboard' | 'customers' | 'contracts' | 'projects' | 'warehouses' | 'documentary' | 'receptions' | 'users' | 'audit' | 'securityAudit' | 'password';
 
 const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; section: string }[] = [
   { id: 'dashboard', label: 'Panel general', icon: LayoutDashboard, section: 'ESPACIO DE TRABAJO' },
@@ -21,6 +22,7 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
   { id: 'contracts', label: 'Contratos', icon: FileCheck2, section: 'GESTIÓN COMERCIAL' },
   { id: 'projects', label: 'Proyectos', icon: FolderKanban, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'warehouses', label: 'Bodegas', icon: PackageOpen, section: 'OPERACIÓN DOCUMENTAL' },
+  { id: 'documentary', label: 'Gestión documental', icon: Archive, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'receptions', label: 'Recepciones', icon: ClipboardList, section: 'OPERACIÓN DOCUMENTAL' },
   { id: 'users', label: 'Usuarios', icon: UsersRound, section: 'ADMINISTRACIÓN' },
   { id: 'audit', label: 'Eventos de dominio', icon: FileClock, section: 'ADMINISTRACIÓN' },
@@ -29,12 +31,12 @@ const navItems: { id: ViewKey; label: string; icon: typeof LayoutDashboard; sect
 ];
 
 const roleViewAccess: Record<string, ViewKey[]> = {
-  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'receptions', 'users', 'audit', 'securityAudit', 'password'],
+  SystemAdministrator: ['dashboard', 'customers', 'contracts', 'projects', 'warehouses', 'documentary', 'receptions', 'users', 'audit', 'securityAudit', 'password'],
   AdministrativeManager: ['dashboard', 'customers', 'contracts', 'projects', 'password'],
-  ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'receptions', 'password'],
-  ArchiveTechnician: ['dashboard', 'projects', 'warehouses', 'receptions', 'password'],
-  ArchiveAssistant: ['dashboard', 'projects', 'warehouses', 'receptions', 'password'],
-  DigitizationOperator: ['dashboard', 'projects', 'password'],
+  ProjectCoordinator: ['dashboard', 'contracts', 'projects', 'warehouses', 'documentary', 'receptions', 'password'],
+  ArchiveTechnician: ['dashboard', 'projects', 'warehouses', 'documentary', 'receptions', 'password'],
+  ArchiveAssistant: ['dashboard', 'projects', 'warehouses', 'documentary', 'receptions', 'password'],
+  DigitizationOperator: ['dashboard', 'projects', 'documentary', 'password'],
   BillingAssistant: ['dashboard', 'contracts', 'projects', 'password'],
   CustomerRepresentative: ['dashboard', 'password'],
 };
@@ -45,6 +47,7 @@ const pageNames: Record<ViewKey, string> = {
   contracts: 'Contratos',
   projects: 'Proyectos',
   warehouses: 'Bodegas',
+  documentary: 'Gestión documental',
   receptions: 'Recepción documental',
   users: 'Usuarios',
   audit: 'Eventos de dominio',
@@ -70,6 +73,7 @@ export function App() {
       case 'contracts': return <ContractsPage canManage={user.role === 'SystemAdministrator' || user.role === 'AdministrativeManager'} />;
       case 'projects': return <ProjectsPage canOperate={user.role === 'SystemAdministrator' || user.role === 'ProjectCoordinator'} />;
       case 'warehouses': return <WarehousesPage canManage={user.role === 'SystemAdministrator'} />;
+      case 'documentary': return <DocumentaryPage role={user.role} />;
       case 'receptions': return <ReceptionsPage role={user.role} />;
       case 'users': return <UsersPage />;
       case 'audit': return <AuditPage />;

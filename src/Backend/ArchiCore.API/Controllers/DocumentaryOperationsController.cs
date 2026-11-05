@@ -41,7 +41,7 @@ public sealed class DocumentaryOperationsController(
     private const int MaxFiles = 10;
     private const int MaxPdfPages = 10_000;
 
-    [HttpGet("api/projects/{projectId:guid}/archive")]
+    [HttpGet("api/projects/{projectId:guid}/documentary-archive")]
     [Authorize(Policy = AppPolicies.ArchivesRead)]
     public async Task<IActionResult> GetArchive(Guid projectId, CancellationToken ct)
     {
@@ -49,7 +49,7 @@ public sealed class DocumentaryOperationsController(
         return archive is null ? NotFound() : Ok(archive);
     }
 
-    [HttpPost("api/projects/{projectId:guid}/archive")]
+    [HttpPost("api/projects/{projectId:guid}/documentary-archive")]
     [Authorize(Policy = AppPolicies.ArchivesManage)]
     public async Task<IActionResult> CreateArchive(Guid projectId, CancellationToken ct)
     {

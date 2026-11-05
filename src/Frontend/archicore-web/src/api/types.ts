@@ -148,3 +148,40 @@ export type DocumentaryReception = {
   createdAt: string;
   updatedAt: string | null;
 };
+
+
+export type ExpedientRecord = { id: string; reference: string; title: string };
+export type ArchiveSubseries = { id: string; code: string; name: string; expedients: ExpedientRecord[] };
+export type ArchiveSeries = { id: string; code: string; name: string; subseries: ArchiveSubseries[] };
+export type ArchiveSection = { id: string; code: string; name: string; series: ArchiveSeries[] };
+export type ArchiveTree = { id: string; projectId: string; sections: ArchiveSection[] };
+export type Box = {
+  id: string; boxCode: string; barcode: string | null; status: string;
+  warehouseLocationId: string | null; folderIds: string[]; createdAt: string; updatedAt: string | null;
+};
+export type WarehouseLocation = {
+  id: string; code: string; type: 'Aisle' | 'Shelf' | 'Level' | 'Position';
+  parentLocationId: string | null; capacity: number | null; occupiedCapacity: number; boxIds: string[];
+};
+export type FolderDocumentRecord = {
+  id: string; title: string; documentDate: string | null; folios: number[];
+  annexes: { title: string; sequence: number }[];
+};
+export type FolderRecord = {
+  id: string; folderCode: string; archiveId: string; expedientId: string;
+  boxId: string | null; loanId: string | null; status: string;
+  documents: FolderDocumentRecord[]; createdAt: string; updatedAt: string | null;
+};
+export type Loan = {
+  id: string; projectId: string; folderId: string; requestedByUserId: string;
+  requestedAtUtc: string; dueAtUtc: string; status: string;
+  authorizedByUserId: string | null; authorizedAtUtc: string | null;
+  deliveredByUserId: string | null; deliveredAtUtc: string | null;
+  returnedByUserId: string | null; returnedAtUtc: string | null; overdueDetectedAtUtc: string | null;
+};
+export type DigitizationRequest = {
+  id: string; projectId: string; folderId: string; requestedByUserId: string;
+  requestedAtUtc: string; status: string; startedByUserId: string | null;
+  startedAtUtc: string | null; completedByUserId: string | null; completedAtUtc: string | null;
+  files: { id: string; originalFileName: string; contentType: string; sizeBytes: number; sha256: string; pageCount: number }[];
+};

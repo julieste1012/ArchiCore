@@ -94,7 +94,7 @@ async function send<T>(
   retried = false,
 ): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.body && !headers.has('Content-Type')) {
+  if (init.body && !(typeof FormData !== 'undefined' && init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -143,6 +143,7 @@ async function send<T>(
 
 export const api = {
   get: <T>(path: string) => send<T>(path),
+  upload: <T>(path: string, body: FormData) => send<T>(path, { method: 'POST', body }),
   post: <T>(path: string, body?: unknown) =>
     send<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(path: string, body: unknown) =>
