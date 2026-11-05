@@ -48,6 +48,9 @@ internal sealed class BoxRepository(ArchiCoreDbContext dbContext) : IBoxReposito
     public Task<Box?> GetByCodeAsync(BoxCode code, CancellationToken cancellationToken = default)
         => dbContext.Boxes.SingleOrDefaultAsync(x => x.BoxCode == code, cancellationToken);
 
+    public Task<Box?> GetByBarcodeAsync(Barcode barcode, CancellationToken cancellationToken = default)
+        => dbContext.Boxes.SingleOrDefaultAsync(x => x.Barcode == barcode, cancellationToken);
+
     public async Task<IReadOnlyList<Box>> ListAsync(int skip, int take, CancellationToken cancellationToken = default)
         => await dbContext.Boxes.AsNoTracking().OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
             .Skip(skip).Take(take).ToListAsync(cancellationToken);

@@ -84,6 +84,25 @@ public sealed class Box : Entity, IAggregateRoot
     }
 
     /// <summary>InStorage -> InTransit. La aplicación debe liberar la posición en Warehouse dentro de la misma transacción.</summary>
+    /// <summary>Actualiza la posición física sin sacar la caja del estado InStorage.</summary>
+    public Result Relocate(Guid destinationLocationId)
+    {
+        if (Status != BoxStatus.InStorage)
+            return Result.Failure(new Error("Box.InvalidRelocation", "Solo una caja almacenada puede cambiar de posición."));
+        if (destinationLocationId == Guid.Empty)
+            return Result.Failure(new Error("Box.DestinationLocationRequired", "La ubicación de destino es obligatoria."));
+        if (WarehouseLocationId is null)
+            return Result.Failure(new Error("Box.SourceLocationRequired", "La caja no tiene una ubicación de origen registrada."));
+        if (WarehouseLocationId == destinationLocationId)
+            return Result.Failure(new Error("Box.SameLocation", "La caja ya está en la ubicación indicada."));
+
+        var previousLocationId = WarehouseLocationId.Value;
+        WarehouseLocationId = destinationLocationId;
+        MarkAsUpdated();
+        AddDomainEvent(new BoxLocationChanged(Id, previousLocationId, destinationLocationId));
+        return Result.Success();
+    }
+
     public Result Move()
     {
         var validation = EnsureStatusIs(BoxStatus.InStorage, "Box.InvalidMove", "La caja solo puede salir de almacenamiento desde el estado InStorage.");

@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<SecurityAuditService>();
         services.AddScoped<DocumentaryReceptionService>();
         services.AddScoped<DocumentaryWorkflowService>();
+        services.AddScoped<DocumentaryManagementService>();
         return services;
     }
 }
