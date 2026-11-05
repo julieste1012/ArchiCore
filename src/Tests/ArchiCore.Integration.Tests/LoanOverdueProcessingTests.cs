@@ -50,9 +50,14 @@ public sealed class LoanOverdueProcessingTests(ApiFixture fixture) : ApiTestBase
         Assert.Equal(LoanStatus.Overdue, persisted.Status);
         Assert.NotNull(persisted.OverdueDetectedAtUtc);
 
-        var eventExists = await Fixture.WithDbContextAsync(db =>
-            db.OutboxMessages.AnyAsync(item =>
-                item.EventType.Contains("LoanOverdue") && item.Payload.Contains(loan.Value.Id.ToString()), Ct));
+        var eventExists = await Fixture.WithDbContextAsync(async db =>
+        {
+            var overdueEvents = await db.OutboxMessages.AsNoTracking()
+                .Where(item => item.EventType.Contains("LoanOverdue"))
+                .Select(item => item.Payload)
+                .ToListAsync(Ct);
+            return overdueEvents.Any(payload => payload.Contains(loan.Value.Id.ToString(), StringComparison.OrdinalIgnoreCase));
+        });
         Assert.True(eventExists);
     }
 }
