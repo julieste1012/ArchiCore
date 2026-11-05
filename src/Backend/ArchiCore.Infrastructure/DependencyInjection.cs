@@ -6,6 +6,7 @@ using ArchiCore.Application.Authentication;
 using ArchiCore.Infrastructure.Security;
 using ArchiCore.Application.Abstractions.Storage;
 using ArchiCore.Infrastructure.Storage;
+using ArchiCore.Infrastructure.Persistence.Loans;
 using Minio;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -66,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<BootstrapAdminSeeder>();
         services.AddScoped<IDomainEventOutboxProcessor, DomainEventOutboxProcessor>();
+        services.AddScoped<LoanOverdueProcessor>();
         return services;
     }
 }

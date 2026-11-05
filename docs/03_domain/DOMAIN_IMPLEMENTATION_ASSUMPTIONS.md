@@ -71,7 +71,8 @@ Reviewed: 2026-11-05. Active delivery: PR #8, \`feat/documentary-domain-foundati
 | Digitization request, start, PDF upload, metadata registration and authorized download API | Implemented for PDF |
 | Role-based API policies and role-visible React documentary workspace | Implemented |
 | Cross-aggregate operations coordinated before one EF Core SaveChanges call | Implemented for the documented application workflows |
-| Automated overdue detection and notification delivery | Pending |
+| Automated overdue detection | Implemented with a configurable polling worker and PostgreSQL row locking |
+| Loan overdue notification delivery | Pending; no approved channel or escalation policy exists |
 | Antivirus/malware scanning and digital preservation controls | Pending |
 | Business acceptance and detailed rules for business processes still marked Pending | Pending |
 

@@ -8,6 +8,7 @@ using ArchiCore.Infrastructure;
 using ArchiCore.Infrastructure.Persistence;
 using ArchiCore.Infrastructure.Security;
 using ArchiCore.Infrastructure.Persistence.Outbox;
+using ArchiCore.Infrastructure.Persistence.Loans;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -127,6 +128,14 @@ builder.Services
     });
 builder.Services.AddArchiCoreAuthorization();
 builder.Services.AddOpenApi();
+
+if (!builder.Environment.IsEnvironment("Testing") &&
+    builder.Configuration.GetValue("Loans:OverdueMonitorEnabled", true))
+{
+    builder.Services.AddHostedService<LoanOverdueHostedService>();
+}
+
+
 
 if (!builder.Environment.IsEnvironment("Testing") &&
     builder.Configuration.GetValue("Outbox:DispatchEnabled", true))
