@@ -15,7 +15,12 @@ function localDateTime(value: Date) {
 }
 
 export function DocumentaryPage({ role }: Props) {
-  const canClassify = ['SystemAdministrator', 'ProjectCoordinator', 'ArchiveTechnician'].includes(role);
+  const canCreateArchive = ['SystemAdministrator', 'ProjectCoordinator'].includes(role);
+  const canClassify = ['SystemAdministrator', 'ArchiveTechnician'].includes(role);
+  const canCreateFolder = ['SystemAdministrator', 'ProjectCoordinator', 'ArchiveTechnician'].includes(role);
+  const canReceiveFolder = ['SystemAdministrator', 'ProjectCoordinator', 'ArchiveAssistant'].includes(role);
+  const canManageFolders = ['SystemAdministrator', 'ArchiveTechnician'].includes(role);
+  const canAssignFolder = ['SystemAdministrator', 'ProjectCoordinator'].includes(role);
   const canCreateBoxes = ['SystemAdministrator', 'ArchiveTechnician'].includes(role);
   const canReadPhysical = ['SystemAdministrator', 'ProjectCoordinator', 'ArchiveTechnician', 'ArchiveAssistant'].includes(role);
   const canMovePhysical = ['SystemAdministrator', 'ArchiveAssistant'].includes(role);
@@ -284,7 +289,7 @@ export function DocumentaryPage({ role }: Props) {
     {tab === 'archive' && <>
       {archiveMissing && <section className="content-card create-card"><h2>Este proyecto aún no tiene Fondo documental</h2>
         <p className="muted-copy">Crea el Fondo para construir su clasificación archivística y registrar expedientes.</p>
-        {canClassify && <button className="primary-button" disabled={saving || !projectId} onClick={() => void createArchive()}><Plus size={15} /> Crear Fondo documental</button>}</section>}
+        {canCreateArchive && <button className="primary-button" disabled={saving || !projectId} onClick={() => void createArchive()}><Plus size={15} /> Crear Fondo documental</button>}</section>}
       {archive && <div className="documentary-grid">
         <section className="content-card"><div className="section-heading"><div><p className="eyebrow">ESTRUCTURA ARCHIVÍSTICA</p><h2>Fondo documental</h2></div></div>
           {sections.length === 0 ? <div className="empty-state"><Archive size={24} /><strong>Clasificación vacía</strong><span>Agrega una sección para comenzar.</span></div> :
@@ -323,17 +328,17 @@ export function DocumentaryPage({ role }: Props) {
       {!archive && <section className="content-card"><div className="empty-state"><Folder size={24} /><strong>Primero crea el Fondo documental</strong><span>Selecciona un proyecto y regístralo en la pestaña Clasificación.</span></div></section>}
       {archive && <div className="documentary-grid">
         <section className="content-card"><div className="section-heading"><div><p className="eyebrow">INVENTARIO DOCUMENTAL</p><h2>Carpetas</h2></div><span className="soft-pill">{folders.length} registros</span></div>
-          {canClassify && <form className="documentary-mini-form" onSubmit={createFolder}><strong>Nueva carpeta</strong><label>Código</label><input required value={folderCode} onChange={e => setFolderCode(e.target.value)} placeholder="FOL-000123" /><label>Expediente</label><select value={expedientId} onChange={e => setExpedientId(e.target.value)} required><option value="">Selecciona expediente</option>{expedients.map(item => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}</select><button className="primary-button" disabled={saving || !expedients.length}><Plus size={14} /> Crear carpeta</button></form>}
+          {canCreateFolder && <form className="documentary-mini-form" onSubmit={createFolder}><strong>Nueva carpeta</strong><label>Código</label><input required value={folderCode} onChange={e => setFolderCode(e.target.value)} placeholder="FOL-000123" /><label>Expediente</label><select value={expedientId} onChange={e => setExpedientId(e.target.value)} required><option value="">Selecciona expediente</option>{expedients.map(item => <option key={item.id} value={item.id}>{item.reference} · {item.title}</option>)}</select><button className="primary-button" disabled={saving || !expedients.length}><Plus size={14} /> Crear carpeta</button></form>}
           <div className="table-scroll"><table><thead><tr><th>CÓDIGO</th><th>ESTADO</th><th>CAJA</th></tr></thead><tbody>{folders.map(item => <tr key={item.id} onClick={() => setFolderId(item.id)} className={folderId === item.id ? 'row-selected' : ''}><td><strong>{item.folderCode}</strong></td><td><StatusBadge status={item.status} /></td><td>{item.boxId ? item.boxId.slice(0, 8).toUpperCase() : 'Sin caja'}</td></tr>)}</tbody></table></div>
         </section>
         <section className="content-card"><div className="section-heading"><div><p className="eyebrow">DETALLE</p><h2>{selectedFolder?.folderCode ?? 'Selecciona una carpeta'}</h2></div><FileText size={18} /></div>
           {selectedFolder && <><div className="documentary-detail-row"><span>Estado</span><StatusBadge status={selectedFolder.status} /></div><div className="documentary-detail-row"><span>Documentos</span><strong>{selectedFolder.documents.length}</strong></div>
-            {canClassify && selectedFolder.status === 'Created' && <button className="secondary-button" disabled={saving} onClick={() => void updateFolder('receive')}>Registrar recepción</button>}
-            {canClassify && selectedFolder.status === 'Received' && <button className="secondary-button" disabled={saving} onClick={() => void updateFolder('organize')}>Marcar organizada</button>}
-            {canClassify && <form className="documentary-mini-form" onSubmit={addDocument}><strong>Registrar documento</strong><input required value={documentTitle} onChange={e => setDocumentTitle(e.target.value)} placeholder="Título del documento" /><button className="secondary-button" disabled={saving}><Plus size={13} /> Agregar</button></form>}
+            {canReceiveFolder && selectedFolder.status === 'Created' && <button className="secondary-button" disabled={saving} onClick={() => void updateFolder('receive')}>Registrar recepción</button>}
+            {canManageFolders && selectedFolder.status === 'Received' && <button className="secondary-button" disabled={saving} onClick={() => void updateFolder('organize')}>Marcar organizada</button>}
+            {canManageFolders && <form className="documentary-mini-form" onSubmit={addDocument}><strong>Registrar documento</strong><input required value={documentTitle} onChange={e => setDocumentTitle(e.target.value)} placeholder="Título del documento" /><button className="secondary-button" disabled={saving}><Plus size={13} /> Agregar</button></form>}
             <div className="documentary-documents">{selectedFolder.documents.map(doc => <div className="documentary-document-item" key={doc.id}>
               <div className="documentary-document-heading"><FileText size={13} /><strong>{doc.title}</strong><small>{doc.folios.length} folios · {doc.annexes.length} anexos</small></div>
-              {canClassify && selectedFolder.status === 'Organized' && <div className="documentary-document-actions">
+              {canManageFolders && ['Received', 'Organized'].includes(selectedFolder.status) && <div className="documentary-document-actions">
                 <button type="button" className="secondary-button compact-button" disabled={saving} onClick={() => void run(
                   () => api.post('/folders/' + selectedFolder.id + '/documents/' + doc.id + '/folios', { number: doc.folios.length + 1 }),
                   'Folio ' + (doc.folios.length + 1) + ' agregado.',
@@ -349,7 +354,7 @@ export function DocumentaryPage({ role }: Props) {
                 </form>
               </div>}
             </div>)}</div>
-            {canMovePhysical && boxes.length > 0 && <div className="documentary-mini-form"><strong>Asignar o mover a caja</strong><select value={boxId} onChange={e => setBoxId(e.target.value)}>{boxes.map(item => <option key={item.id} value={item.id}>{item.boxCode}</option>)}</select><button className="secondary-button" disabled={saving || !boxId} onClick={() => void run(() => api.post('/folders/' + selectedFolder.id + (selectedFolder.status === 'Stored' ? '/move-to-box/' : '/box/') + boxId), 'Relación de carpeta y caja actualizada.', reloadArchive)}>Guardar caja</button></div>}
+            {(canAssignFolder || canMovePhysical) && boxes.length > 0 && <div className="documentary-mini-form"><strong>{selectedFolder.status === 'Stored' ? 'Mover entre cajas' : 'Asignar caja de almacenamiento'}</strong><select value={boxId} onChange={e => setBoxId(e.target.value)}>{boxes.map(item => <option key={item.id} value={item.id}>{item.boxCode}</option>)}</select>{canAssignFolder && selectedFolder.status === 'Organized' && <button className="secondary-button" disabled={saving || !boxId} onClick={() => void run(() => api.post('/folders/' + selectedFolder.id + '/box/' + boxId), 'Caja asignada a la carpeta.', reloadArchive)}>Asignar caja</button>}{canMovePhysical && selectedFolder.status === 'Stored' && <button className="secondary-button" disabled={saving || !boxId} onClick={() => void run(() => api.post('/folders/' + selectedFolder.id + '/move-to-box/' + boxId), 'Carpeta trasladada a otra caja.', reloadArchive)}>Mover carpeta</button>}</div>}
           </>}
         </section>
       </div>}

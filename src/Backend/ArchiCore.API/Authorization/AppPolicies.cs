@@ -25,12 +25,16 @@ public static class AppPolicies
     public const string ReceptionsApprove = "Receptions.Approve";
 
     public const string ArchivesRead = "Archives.Read";
+    public const string ArchivesCreate = "Archives.Create";
     public const string ArchivesManage = "Archives.Manage";
     public const string BoxesRead = "Boxes.Read";
     public const string BoxesCreate = "Boxes.Create";
     public const string BoxesPhysical = "Boxes.Physical";
     public const string FoldersRead = "Folders.Read";
+    public const string FoldersCreate = "Folders.Create";
+    public const string FoldersReceive = "Folders.Receive";
     public const string FoldersManage = "Folders.Manage";
+    public const string FoldersAssign = "Folders.Assign";
     public const string FoldersPhysical = "Folders.Physical";
     public const string LoansRead = "Loans.Read";
     public const string LoansRequest = "Loans.Request";
@@ -81,8 +85,10 @@ public static class AppPolicies
             options.AddPolicy(ArchivesRead, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator,
                 AppRoles.ArchiveTechnician, AppRoles.ArchiveAssistant, AppRoles.DigitizationOperator));
+            options.AddPolicy(ArchivesCreate, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator));
             options.AddPolicy(ArchivesManage, policy => policy.RequireRole(
-                AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator, AppRoles.ArchiveTechnician));
+                AppRoles.SystemAdministrator, AppRoles.ArchiveTechnician));
 
             options.AddPolicy(BoxesRead, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator,
@@ -95,8 +101,14 @@ public static class AppPolicies
             options.AddPolicy(FoldersRead, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator,
                 AppRoles.ArchiveTechnician, AppRoles.ArchiveAssistant, AppRoles.DigitizationOperator));
-            options.AddPolicy(FoldersManage, policy => policy.RequireRole(
+            options.AddPolicy(FoldersCreate, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator, AppRoles.ArchiveTechnician));
+            options.AddPolicy(FoldersReceive, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator, AppRoles.ArchiveAssistant));
+            options.AddPolicy(FoldersManage, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator, AppRoles.ArchiveTechnician));
+            options.AddPolicy(FoldersAssign, policy => policy.RequireRole(
+                AppRoles.SystemAdministrator, AppRoles.ProjectCoordinator));
             options.AddPolicy(FoldersPhysical, policy => policy.RequireRole(
                 AppRoles.SystemAdministrator, AppRoles.ArchiveAssistant));
 

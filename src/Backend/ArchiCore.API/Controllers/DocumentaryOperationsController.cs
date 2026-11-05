@@ -50,7 +50,7 @@ public sealed class DocumentaryOperationsController(
     }
 
     [HttpPost("api/projects/{projectId:guid}/documentary-archive")]
-    [Authorize(Policy = AppPolicies.ArchivesManage)]
+    [Authorize(Policy = AppPolicies.ArchivesCreate)]
     public async Task<IActionResult> CreateArchive(Guid projectId, CancellationToken ct)
     {
         var result = await workflows.CreateArchiveAsync(projectId, ct);
@@ -151,7 +151,7 @@ public sealed class DocumentaryOperationsController(
         => Ok(await management.ListFoldersAsync(archiveId, page, pageSize, ct));
 
     [HttpPost("api/archives/{archiveId:guid}/folders")]
-    [Authorize(Policy = AppPolicies.FoldersManage)]
+    [Authorize(Policy = AppPolicies.FoldersCreate)]
     public async Task<IActionResult> CreateFolder(Guid archiveId, CreateFolderApiRequest request, CancellationToken ct)
     {
         var result = await workflows.CreateFolderAsync(request.FolderCode, archiveId, request.ExpedientId, ct);
@@ -167,7 +167,7 @@ public sealed class DocumentaryOperationsController(
     }
 
     [HttpPost("api/folders/{id:guid}/receive")]
-    [Authorize(Policy = AppPolicies.FoldersManage)]
+    [Authorize(Policy = AppPolicies.FoldersReceive)]
     public async Task<IActionResult> ReceiveFolder(Guid id, CancellationToken ct)
         => ToAction(await management.ReceiveFolderAsync(id, ct));
 
@@ -192,7 +192,7 @@ public sealed class DocumentaryOperationsController(
         => ToResponse(await management.AddAnnexAsync(folderId, documentId, request.Title, ct));
 
     [HttpPost("api/folders/{folderId:guid}/box/{boxId:guid}")]
-    [Authorize(Policy = AppPolicies.FoldersPhysical)]
+    [Authorize(Policy = AppPolicies.FoldersAssign)]
     public async Task<IActionResult> AssignFolderToBox(Guid folderId, Guid boxId, CancellationToken ct)
         => ToAction(await workflows.AssignFolderToBoxAsync(folderId, boxId, ct));
 
