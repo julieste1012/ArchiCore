@@ -40,6 +40,9 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
             location.Property(x => x.Capacity);
             location.HasIndex("WarehouseId", nameof(WarehouseLocation.Code)).IsUnique();
 
+            // The public read-only view is a domain projection, not an EF navigation.
+            location.Ignore(x => x.BoxReferences);
+
             location.OwnsMany(x => x.BoxReferencesForPersistence, boxReference =>
             {
                 boxReference.ToTable("WarehouseLocationBoxReferences");
